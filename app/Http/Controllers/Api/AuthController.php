@@ -24,9 +24,11 @@ class AuthController extends Controller {
     public function login(Request $r)
     {
         $v = $r->validate([
-            'email'=>'required|email'
+            'email'    => 'required|email',
+            'password' => 'required|string|min:6',
+            'remember' => 'boolean',
         ]);
-        return $this->auth->login($v['email']);
+        return $this->auth->login($v['email'], $v['password'], (bool)($v['remember'] ?? false));
     }
 }
 
