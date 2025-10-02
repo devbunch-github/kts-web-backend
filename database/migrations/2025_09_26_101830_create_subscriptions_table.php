@@ -13,14 +13,15 @@ return new class extends Migration
     {
         Schema::create('subscriptions', function (Blueprint $t) {
             $t->id();
-            $t->foreignId('user_id')->constrained('users');   // your existing users (SQL Server)
+            $t->foreignId('user_id')->constrained('users');   // always valid user
             $t->foreignId('plan_id')->constrained('plans');
-            $t->string('status')->default('active'); // active|canceled|past_due
+            $t->string('status')->default('pending'); // pending|active|canceled
+            $t->string('payment_provider')->nullable();
+            $t->string('payment_reference')->nullable();
             $t->timestamp('starts_at')->nullable();
             $t->timestamp('ends_at')->nullable();
             $t->timestamps();
         });
-
     }
 
     /**
