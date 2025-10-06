@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('subscriptions', function (Blueprint $t) {
             $t->id();
-            $t->foreignId('user_id')->constrained('users');   // always valid user
+            $t->foreignId('user_id')->constrained('users');
             $t->foreignId('plan_id')->constrained('plans');
-            $t->string('status')->default('pending'); // pending|active|canceled
+            $t->string('status')->default('pending'); // pending|active|canceled|expired
             $t->string('payment_provider')->nullable();
             $t->string('payment_reference')->nullable();
             $t->timestamp('starts_at')->nullable();

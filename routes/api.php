@@ -7,6 +7,8 @@ use App\Http\Controllers\Api\PlanController;
 use App\Http\Controllers\Api\CheckoutController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\SubscriptionController;
+use App\Http\Controllers\Api\WebhookController;
 
 
 Route::get('/beauticians', [BeauticianController::class, 'index']);
@@ -29,6 +31,14 @@ Route::post('/payment/stripe/create-intent', [PaymentController::class, 'createS
 Route::post('/payment/paypal/create-order', [PaymentController::class, 'createPayPalOrder']);
 Route::post('/payment/paypal/capture', [PaymentController::class, 'capturePayPalOrder']);
 Route::post('/payment/confirm', [PaymentController::class, 'confirmPayment']);
+
+// Route::middleware('auth:sanctum')->group(function(){
+    Route::post('/subscription/stripe',[SubscriptionController::class,'createStripe']);
+    Route::post('/subscription/paypal',[SubscriptionController::class,'createPayPal']);
+// });
+
+Route::post('/webhook/stripe',[WebhookController::class,'handleStripe']);
+Route::post('/webhook/paypal',[WebhookController::class,'handlePayPal']);
 
 
 
