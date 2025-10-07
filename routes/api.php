@@ -18,6 +18,8 @@ Route::post('/contact', [ContactController::class, 'store']);
 
 // Plans & checkout
 Route::get('/plans', [PlanController::class, 'index']);
+Route::get('/plans/{id}', [PlanController::class, 'show']);
+
 Route::post('/checkout', [CheckoutController::class, 'create']);
 Route::post('/checkout/confirm', [CheckoutController::class, 'confirm']);
 
