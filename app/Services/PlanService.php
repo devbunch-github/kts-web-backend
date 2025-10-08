@@ -12,4 +12,12 @@ class PlanService
     {
         return $this->repo->active();
     }
+
+    /**
+     * Find a specific plan by ID
+     */
+    public function find($id)
+    {
+        return $this->repo->find($id);
+    }
 }

@@ -71,5 +71,27 @@ class AuthController extends Controller {
             'user' => $user,
         ]);
     }
+
+    public function checkEmail(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $exists = User::where('email', $request->email)->exists();
+
+        if ($exists) {
+            return response()->json([
+                'exists' => true,
+                'message' => 'This email is already registered. Please sign in instead.'
+            ], 409);
+        }
+
+        return response()->json([
+            'exists' => false,
+            'message' => 'Email is available.'
+        ]);
+    }
+
 }
 
