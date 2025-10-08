@@ -28,6 +28,8 @@ Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/pre-register', [AuthController::class, 'preRegister']);
 Route::post('/auth/set-password', [AuthController::class, 'setPassword']);
+Route::post('/auth/check-email', [AuthController::class, 'checkEmail']);
+
 
 Route::post('/payment/stripe/create-intent', [PaymentController::class, 'createStripeIntent']);
 Route::post('/payment/paypal/create-order', [PaymentController::class, 'createPayPalOrder']);
