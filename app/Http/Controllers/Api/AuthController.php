@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use App\Services\AuthService;
 use App\Models\User;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\DB;
 
 class AuthController extends Controller {
     public function __construct(private AuthService $auth) {}
@@ -36,24 +38,43 @@ class AuthController extends Controller {
     public function preRegister(Request $request)
     {
         $data = $request->validate([
-            'email' => 'required|email|unique:users,email',
-            'name'  => 'required|string|max:191',
+            'email'   => 'required|email|unique:users,email',
+            'name'    => 'required|string|max:191',
             'country' => 'nullable|string|max:50',
         ]);
 
-        $user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'country' => $data['country'] ?? null,
-            'password' => bcrypt(Str::random(12)), // temp random password
-            'status' => 'pending',
-        ]);
+        DB::beginTransaction();
 
-        return response()->json([
-            'id'    => $user->id,
-            'email' => $user->email,
-        ]);
+        try {
+            $user = User::create([
+                'name'     => $data['name'],
+                'email'    => $data['email'],
+                'country'  => $data['country'] ?? null,
+                'password' => bcrypt(Str::random(12)),
+                'status'   => 'pending',
+            ]);
+
+            $role = Role::firstOrCreate(['name' => 'business_admin', 'guard_name' => 'web']);
+            $user->assignRole($role);
+
+            // Keep your existing service logic
+            $bundle = app(\App\Services\Auth\PreRegisterOrchestrator::class)
+                ->afterPreRegister($user);
+
+            DB::commit();
+
+            return response()->json([
+                'id'         => $user->id,
+                'email'      => $user->email,
+                'account_id' => $bundle['account']->Id,
+            ]);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Registration failed', 'error' => $e->getMessage()], 500);
+        }
     }
+
 
     public function setPassword(Request $request)
     {

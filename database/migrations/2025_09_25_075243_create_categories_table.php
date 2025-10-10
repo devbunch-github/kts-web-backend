@@ -13,7 +13,21 @@ return new class extends Migration
     {
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
+            $table->string('Name');
+            $table->unsignedBigInteger('AccountId');
+            $table->unsignedBigInteger('CreatedById')->nullable();
+            $table->boolean('IsActive')->default(true);
             $table->timestamps();
+
+            $table->foreign('AccountId')
+                ->references('Id')
+                ->on('accounts')
+                ->cascadeOnDelete();
+
+            $table->foreign('CreatedById')
+                ->references('id')
+                ->on('users')
+                ->nullOnDelete();
         });
     }
 
