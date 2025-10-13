@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller {
     public function __construct(private AuthService $auth) {}
@@ -27,13 +28,29 @@ class AuthController extends Controller {
 
     public function login(Request $r)
     {
-        $v = $r->validate([
-            'email'    => 'required|email',
-            'password' => 'required|string|min:6',
-            'remember' => 'boolean',
+        $r->validate([
+            'email' => 'required|email',
+            'password' => 'required',
         ]);
-        return $this->auth->login($v['email'], $v['password'], (bool)($v['remember'] ?? false));
+
+        $user = User::where('email', $r->email)->first();
+
+        if (!$user || !Hash::check($r->password, $user->password)) {
+            return response()->json([
+                'message' => 'Invalid credentials'
+            ], 401);
+        }
+
+        // Create token - this will now work with HasApiTokens trait
+        $token = $user->createToken('auth-token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Logged in successfully',
+            'user' => $user,
+            'token' => $token,
+        ]);
     }
+
 
     public function preRegister(Request $request)
     {

@@ -7,6 +7,8 @@ use App\Repositories\Contracts\BeauticianRepositoryInterface;
 use App\Repositories\Eloquent\BeauticianRepository;
 use App\Repositories\Contracts\{PlanRepositoryInterface, ContactRepositoryInterface};
 use App\Repositories\Eloquent\{PlanRepository, ContactRepository};
+use App\Repositories\Contracts\ExpenseRepositoryInterface;
+use App\Repositories\Eloquent\ExpenseRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -18,6 +20,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(BeauticianRepositoryInterface::class, BeauticianRepository::class);
         $this->app->bind(PlanRepositoryInterface::class, PlanRepository::class);
         $this->app->bind(ContactRepositoryInterface::class, ContactRepository::class);
+        $this->app->bind(ExpenseRepositoryInterface::class, ExpenseRepository::class);
 
     }
 

@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\WebhookController;
 use App\Http\Controllers\Api\IncomeController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\ExpenseController;
 
 
 Route::get('/beauticians', [BeauticianController::class, 'index']);
@@ -47,10 +48,14 @@ Route::post('/payment/confirm', [PaymentController::class, 'confirmPayment']);
 Route::post('/webhook/stripe',[WebhookController::class,'handleStripe']);
 Route::post('/webhook/paypal',[WebhookController::class,'handlePayPal']);
 
+Route::get('/test-auth', function () {
+    return response()->json(['user' => Auth::user()]);
+});
 
 
 
-// Route::middleware('auth:sanctum')->group(function () {
+
+Route::middleware('auth:sanctum')->group(function () {
     Route::get('/income', [IncomeController::class, 'index']);
     Route::post('/income', [IncomeController::class, 'store']);
     Route::get('/income/{id}', [IncomeController::class, 'show']);
@@ -62,4 +67,9 @@ Route::post('/webhook/paypal',[WebhookController::class,'handlePayPal']);
 
     Route::get('/income/export/pdf', [IncomeController::class, 'exportPdf']);
 
-// });
+    Route::prefix('admin')->group(function () {
+        Route::apiResource('expenses', ExpenseController::class);
+        Route::get('expenses/export/pdf', [ExpenseController::class, 'exportPdf']);
+    });
+
+});
