@@ -69,4 +69,10 @@ class User extends Authenticatable
             ->exists();
     }
 
+    public function bkUser()
+    {
+        return $this->hasOne(BkUser::class, 'CreatedById', 'id');
+    }
+
+
 }

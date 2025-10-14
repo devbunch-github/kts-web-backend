@@ -11,10 +11,13 @@ use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\WebhookController;
 use App\Http\Controllers\Api\Admin\DashboardController;
-use App\Http\Controllers\Api\Admin\IncomeController;
+use App\Http\Controllers\Api\Admin\AdminIncomeController;
 use App\Http\Controllers\Api\Admin\ExpenseController;
 use App\Http\Controllers\Api\Admin\PaymentSettingController;
 use App\Http\Controllers\Api\Admin\SmsPackageController;
+use App\Http\Controllers\Api\IncomeController;
+use App\Http\Controllers\Api\ServiceController;
+use App\Http\Controllers\Api\CategoryController;
 
 
 Route::get('/beauticians', [BeauticianController::class, 'index']);
@@ -52,7 +55,7 @@ Route::post('/webhook/paypal',[WebhookController::class,'handlePayPal']);
 
 // Super Admin
 Route::get('/admin/dashboard', [DashboardController::class, 'index']);
-Route::get('/admin/income/{user_id}', [IncomeController::class, 'show']);
+Route::get('/admin/income/{user_id}', [AdminIncomeController::class, 'show']);
 Route::get('/admin/expense/{user_id}', [ExpenseController::class, 'show']);
 Route::get('/admin/payment-settings', [PaymentSettingController::class, 'show']);
 Route::post('/admin/payment-settings', [PaymentSettingController::class, 'update']);
@@ -74,4 +77,21 @@ Route::prefix('admin')->group(function () {
 
     // Delete package
     Route::delete('/sms-packages/{id}', [SmsPackageController::class, 'destroy']);
+
+    // SMS Purchase Blance
+    Route::get('/sms-purchase-balance', [SmsPackageController::class, 'purchasebalance']);
 });
+
+// Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/income', [IncomeController::class, 'index']);
+    Route::post('/income', [IncomeController::class, 'store']);
+    Route::get('/income/{id}', [IncomeController::class, 'show']);
+    Route::put('/income/{id}', [IncomeController::class, 'update']);
+    Route::delete('/income/{id}', [IncomeController::class, 'destroy']);
+
+    Route::get('/categories', [CategoryController::class, 'index']);
+    Route::get('/services', [ServiceController::class, 'index']);
+
+    Route::get('/income/export/pdf', [IncomeController::class, 'exportPdf']);
+
+// });

@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\BkUser;
+use App\Models\Account;
 use App\Models\Expense;
 use Carbon\Carbon;
 
@@ -12,8 +14,8 @@ class ExpenseController extends Controller
 {
     public function show($user_id)
     {
+        // Step 1: Get Laravel User
         $user = User::find($user_id);
-
         if (!$user) {
             return response()->json([
                 'success' => false,
@@ -21,46 +23,69 @@ class ExpenseController extends Controller
             ], 404);
         }
 
-        // Example: You can later replace this with your real Expense model
-        $expenses = Expense::where('user_id', $user_id)
-            ->orderBy('created_at', 'desc')
-            ->get(['supplier', 'payment_provider', 'amount', 'created_at']);
+        // Step 2: Match BkUser (SQL Server)
+        $bkUser = BkUser::where('Email', $user->email)
+            ->orWhere('DisplayName', 'LIKE', "%{$user->name}%")
+            ->first();
+
+        if (!$bkUser) {
+            return response()->json([
+                'success' => false,
+                'message' => 'BkUser not found for this user.'
+            ], 404);
+        }
+
+        // Step 3: Get Account
+        $account = $bkUser->account;
+        if (!$account) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No account found for this BkUser.'
+            ], 404);
+        }
+
+        // Step 4: Fetch Expense records from SQL Server
+        $expenses = Expense::where('AccountId', $account->Id)
+            ->orderBy('PaidDateTime', 'desc')
+            ->get();
 
         if ($expenses->isEmpty()) {
-            // fallback dummy demo data
-            $expenses = collect([
-                [
-                    'supplier' => 'Demo',
-                    'payment_provider' => 'Paypal',
-                    'amount' => 1000,
-                    'created_at' => now()->subDays(15),
-                ],
-                [
-                    'supplier' => 'Demo',
-                    'payment_provider' => 'Stripe',
-                    'amount' => 1500,
-                    'created_at' => now()->subDays(10),
-                ],
-                [
-                    'supplier' => 'Demo',
-                    'payment_provider' => 'Pay at venue',
-                    'amount' => 500,
-                    'created_at' => now()->subDays(5),
-                ],
+            return response()->json([
+                'success' => true,
+                'message' => 'No expense records found.',
+                'total_expense' => '0.00',
+                'currency' => '£',
+                'data' => [],
             ]);
         }
 
-        $data = $expenses->map(function ($item) {
+        // Step 5: Map PaymentMethod integers to readable names
+        $methodMap = [
+            1 => 'Stripe',
+            2 => 'Card',
+            3 => 'Cash',
+            4 => 'Paypal',
+            5 => 'Bank Transfer',
+            6 => 'Pay at Venue',
+        ];
+
+        // Step 6: Format data
+        $formatted = $expenses->map(function ($expense) use ($methodMap) {
             return [
-                'supplier' => $item['supplier'],
-                'payment_method' => ucfirst($item['payment_provider']),
-                'payment_date' => Carbon::parse($item['created_at'])->format('d-m-Y'),
-                'amount' => number_format($item['amount'], 2),
+                'supplier' => $expense->Supplier ?? 'N/A',
+                'payment_method' => $methodMap[$expense->PaymentMethod] ?? 'Other',
+                'payment_date' => $expense->PaidDateTime
+                    ? Carbon::parse($expense->PaidDateTime)->format('d-m-Y')
+                    : ($expense->DateCreated ? Carbon::parse($expense->DateCreated)->format('d-m-Y') : ''),
+                'amount' => number_format((float) $expense->Amount, 2),
+                'notes' => $expense->Notes ?? '',
             ];
         });
 
-        $total = $data->sum(fn ($i) => (float) str_replace(',', '', $i['amount']));
+        // Step 7: Calculate total expense
+        $total = $expenses->sum(fn($e) => (float) $e->Amount);
 
+        // Step 8: Return structured response
         return response()->json([
             'success' => true,
             'user' => [
@@ -68,9 +93,17 @@ class ExpenseController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
             ],
+            'bk_user' => [
+                'id' => $bkUser->Id,
+                'display_name' => $bkUser->DisplayName,
+                'email' => $bkUser->Email,
+            ],
+            'account' => [
+                'id' => $account->Id,
+            ],
             'total_expense' => number_format($total, 2),
             'currency' => '£',
-            'data' => $data,
+            'data' => $formatted,
         ]);
     }
 }
