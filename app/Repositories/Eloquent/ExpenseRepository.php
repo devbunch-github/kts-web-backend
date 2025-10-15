@@ -8,6 +8,7 @@ use App\Models\AccountingPeriod;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 
+
 class ExpenseRepository implements ExpenseRepositoryInterface
 {
     public function list($request)
@@ -16,7 +17,7 @@ class ExpenseRepository implements ExpenseRepositoryInterface
         $q = Expenses::query()
             ->with('category')
             ->where('AccountId', $accountId)
-            ->where('parentId', 0)
+            // ->where('parentId', 0)
             ->orderByDesc('Id');
 
         if ($request->filled('category_id')) {
@@ -43,13 +44,18 @@ class ExpenseRepository implements ExpenseRepositoryInterface
         return Expenses::with('category')->findOrFail($id);
     }
 
+
     public function store(array $data, $user)
     {
         $account = $user->bkUser->account;
         $user = $user->bkUser;
-        $accountPeriod = AccountingPeriod::where('AccountId', $account->Id ?? null)->first();
-
         $next_execution_date = null;
+
+        if (!$account) {
+            return null;
+        }
+
+        $accountPeriod = AccountingPeriod::where('AccountId', $account->Id)->first();
 
         if (!empty($data['recurring'])) {
             $paidDate = Carbon::parse($data['paid_date_time']);
@@ -62,25 +68,93 @@ class ExpenseRepository implements ExpenseRepositoryInterface
         }
 
         $expenseId = DB::table('Expenses')->insertGetId([
-            'AccountId' => $account->Id ?? null,
-            'Supplier'  => $data['supplier'],
+            'AccountId' => $account->Id,
+            'Supplier' => $data['supplier'],
             'AccountingPeriodId' => @$accountPeriod->Id,
             'Amount' => $data['amount'],
             'CategoryId' => $data['category_id'],
             'Notes' => $data['notes'] ?? null,
             'ReciptId' => $data['receipt_id'] ?? null,
+            'parentId' => 0,
             'PaymentMethod' => $data['payment_method'] == 'Cash' ? 0 : 1,
             'PaidDateTime' => $data['paid_date_time'],
             'recurring' => $data['recurring'] ?? null,
             'next_execution_date' => $next_execution_date,
             'recurring_created_at' => Carbon::now(),
-            'parentId' => 0,
             'DateCreated' => Carbon::now(),
-            'CreatedById' => @$user->Id
+            'CreatedById' => @$user->Id,
         ]);
 
-        return Expenses::find($expenseId);
+        $expense = Expenses::find($expenseId);
+
+        if (!empty($data['recurring']) && $expense) {
+            $execution_date = Carbon::parse($expense->next_execution_date);
+            $now = Carbon::now();
+
+            while ($execution_date->lessThanOrEqualTo($now)) {
+                $execution_date = $this->recurringExpense($expense, $execution_date);
+                $expense->refresh();
+            }
+        }
+
+        return $expense;
     }
+
+    /**
+     * Create a child recurring expense and update parent's next_execution_date
+     */
+    private function recurringExpense($expense, $execution_date)
+    {
+        DB::table('Expenses')->insertGetId([
+            'AccountId' => $expense->AccountId,
+            'Supplier'  => $expense->Supplier,
+            'AccountingPeriodId' => @$expense->AccountingPeriodId,
+            'Amount' => $expense->Amount,
+            'CategoryId' => $expense->CategoryId,
+            'Notes' => $expense->Notes,
+            'ReciptId' => null,
+            'parentId' => $expense->Id,
+            'PaymentMethod' => $expense->PaymentMethod,
+            'PaidDateTime' => Carbon::parse($execution_date),
+            'recurring' => $expense->recurring,
+            'recurring_created_at' => $execution_date,
+            'next_execution_date' => null,
+            'DateCreated' => $execution_date,
+            'CreatedById' => @$expense->CreatedById]);
+        // Update Next Execution Date of Parent
+        if($expense->recurring == 'weekly'){
+            $next_execution_date = Carbon::parse($execution_date)->addWeeks(1);
+        }
+        if($expense->recurring == 'fortnightly'){
+            $next_execution_date = Carbon::parse($execution_date)->addWeeks(2);
+        }
+        if($expense->recurring == '4_weeks'){
+            $next_execution_date = Carbon::parse($execution_date)->addWeeks(4);
+        }
+        if($expense->recurring == 'monthly'){
+            $next_execution_date = Carbon::parse($execution_date)->addDay()->addMonth()->subDay();
+        }
+        DB::table('Expenses')->where('Id',$expense->Id)->update(['next_execution_date'=>$next_execution_date]);
+
+        DB::table('recurring_expense_logs')->insertGetId([
+            'AccountId' => $expense->AccountId,
+            'Supplier'  => $expense->Supplier,
+            'AccountingPeriodId' => @$expense->AccountingPeriodId,
+            'Amount' => $expense->Amount,
+            'CategoryId' => $expense->CategoryId,
+            'Notes' => $expense->Notes,
+            'ReciptId' => $expense->ReciptId,
+            'PaymentMethod' => $expense->PaymentMethod,
+            'PaidDateTime' => date("Y-m-d",strtotime(Carbon::parse($execution_date)->subDay())),  // to show correct date on App Side
+            'recurring' => $expense->recurring,
+            'recurring_created_at' => date('Y-m-d', strtotime($execution_date)),
+            'DateModified' => date('Y-m-d',strtotime($execution_date)),
+            'ModifiedById' => @$expense->CreatedById,
+            'DateCreated' => date('Y-m-d',strtotime($execution_date)),
+            'CreatedById' => @$expense->CreatedById]);
+            return $next_execution_date;
+    }
+
 
     public function update($id, array $data)
     {

@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
             $table->string('Name');
+            $table->string('Description')->nullable();
             $table->unsignedBigInteger('AccountId');
             $table->unsignedBigInteger('CreatedById')->nullable();
             $table->boolean('IsActive')->default(true);

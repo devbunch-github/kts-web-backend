@@ -70,6 +70,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('admin')->group(function () {
         Route::apiResource('expenses', ExpenseController::class);
         Route::get('expenses/export/pdf', [ExpenseController::class, 'exportPdf']);
+
+        // Services CRUD
+        Route::get('services/{id}', [ServiceController::class, 'show']);
+        Route::post('services', [ServiceController::class, 'store']);
+        Route::put('services/{id}', [ServiceController::class, 'update']);
+        Route::delete('services/{id}', [ServiceController::class, 'destroy']);
+
+        // Categories CRUD
+        Route::get('categories/{id}', [CategoryController::class, 'show']);
+        Route::post('categories', [CategoryController::class, 'store']);
+        Route::put('categories/{id}', [CategoryController::class, 'update']);
+        Route::delete('categories/{id}', [CategoryController::class, 'destroy']);
     });
 
 });
