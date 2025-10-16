@@ -14,7 +14,7 @@ class ServiceStoreRequest extends FormRequest
             'Name' => ['required','string','max:255'],
             'CategoryId' => ['nullable','integer','exists:categories,Id'],
             'TotalPrice' => ['required','numeric','min:0'],
-            'DepositType' => ['nullable','in:Percentage,Fixed'],
+            'DepositType' => ['nullable'],
             'Deposit' => ['nullable','numeric','min:0'],
             'DefaultAppointmentDuration' => ['required','integer','min:1'],
             'Description' => ['nullable','string'],

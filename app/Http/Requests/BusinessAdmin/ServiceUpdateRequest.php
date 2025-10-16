@@ -14,7 +14,7 @@ class ServiceUpdateRequest extends FormRequest
             'Name' => ['sometimes','required','string','max:255'],
             'CategoryId' => ['sometimes','nullable','integer','exists:categories,Id'],
             'TotalPrice' => ['sometimes','required','numeric','min:0'],
-            'DepositType' => ['sometimes','nullable','in:Percentage,Fixed'],
+            'DepositType' => ['sometimes','nullable'],
             'Deposit' => ['sometimes','nullable','numeric','min:0'],
             'DefaultAppointmentDuration' => ['sometimes','required','integer','min:1'],
             'Description' => ['sometimes','nullable','string'],

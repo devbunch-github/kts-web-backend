@@ -18,20 +18,19 @@ class CategoryRepository
     public function findByAccount(int $accountId,int $id): Category
     {
         return Category::where('AccountId',$accountId)
-            ->where('Id',$id)
+            ->where('id',$id)
             ->firstOrFail();
     }
 
     public function create(array $data): Category
     {
         $user = Auth::user();
-        $createdById = $user->bkUser->Id;
 
         return Category::create([
             'Name'        => $data['Name'],
             'AccountId'   => $user?->bkUser?->account?->Id,
             'Description' => $data['Description'] ?? null,
-            'CreatedById' => $createdById,
+            'CreatedById' => $user->id,
             'IsActive'    => $data['IsActive'] ?? 1,
         ]);
     }

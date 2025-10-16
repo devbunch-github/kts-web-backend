@@ -26,11 +26,11 @@ class ServiceRepository
     public function create(array $data): Service
     {
         $user = Auth::user();
-        $createdById = $user->bkUser->Id;
+        $createdById = $user?->bkUser?->Id ?? null;
 
         $depositType = match (strtolower($data['DepositType'] ?? '')) {
-            'percentage' => 1,
-            'fixed' => 2,
+            'percentage' => 0,
+            'fixed' => 1,
             default => null,
         };
 
@@ -41,39 +41,46 @@ class ServiceRepository
             'TotalPrice' => $data['TotalPrice'] ?? 0,
             'DepositType' => $depositType,
             'Deposit'    => $data['Deposit'] ?? 0,
-            'DefaultAppointmentDuration'=> $data['DefaultAppointmentDuration'] ?? 0,
-            'Description'=> $data['Description'] ?? null,
+            'DefaultAppointmentDuration' => $data['DefaultAppointmentDuration'] ?? 0,
+            'Description' => $data['Description'] ?? null,
             'FilePath'   => $data['FilePath'] ?? null,
             'ImagePath'  => $data['ImagePath'] ?? null,
-            'DateCreated'=> now(),
-            'CreatedById'=> $createdById,
+            'DateCreated' => now(),
+            'CreatedById' => $createdById,
             'IsDeleted'  => 0,
         ]);
     }
 
-    public function update(int $accountId,int $id,array $data): Service
+    public function update(int $accountId, int $id, array $data): Service
     {
-        $row = $this->findByAccount($accountId,$id);
+        $row = $this->findByAccount($accountId, $id);
 
         $user = Auth::user();
-        $modifiedById = $user->bkUser->Id;
+        $modifiedById = $user?->bkUser?->Id ?? null;
+
+        $depositType = match (strtolower($data['DepositType'] ?? '')) {
+            'percentage' => 0,
+            'fixed' => 1,
+            default => null,
+        };
 
         $row->update([
             'CategoryId' => $data['CategoryId'] ?? $row->CategoryId,
             'Name'       => $data['Name'] ?? $row->Name,
             'TotalPrice' => $data['TotalPrice'] ?? $row->TotalPrice,
-            'DepositType'=> $data['DepositType'] ?? $row->DepositType,
+            'DepositType' => $depositType,
             'Deposit'    => $data['Deposit'] ?? $row->Deposit,
-            'DefaultAppointmentDuration'=> $data['DefaultAppointmentDuration'] ?? $row->DefaultAppointmentDuration,
-            'Description'=> $data['Description'] ?? $row->Description,
+            'DefaultAppointmentDuration' => $data['DefaultAppointmentDuration'] ?? $row->DefaultAppointmentDuration,
+            'Description' => $data['Description'] ?? $row->Description,
             'FilePath'   => $data['FilePath'] ?? $row->FilePath,
             'ImagePath'  => $data['ImagePath'] ?? $row->ImagePath,
-            'DateModified'=> now(),
-            'ModifiedById'=> $modifiedById,
+            'DateModified' => now(),
+            'ModifiedById' => $modifiedById,
         ]);
 
         return $row->refresh();
     }
+
 
     public function softDelete(int $accountId,int $id): bool
     {

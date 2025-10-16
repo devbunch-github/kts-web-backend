@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\IncomeController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ExpenseController;
+use App\Http\Controllers\Api\FileUploadController;
 
 
 Route::get('/beauticians', [BeauticianController::class, 'index']);
@@ -56,6 +57,9 @@ Route::get('/test-auth', function () {
 
 
 Route::middleware('auth:sanctum')->group(function () {
+
+    Route::post('/file-upload', [FileUploadController::class, 'store']);
+
     Route::get('/income', [IncomeController::class, 'index']);
     Route::post('/income', [IncomeController::class, 'store']);
     Route::get('/income/{id}', [IncomeController::class, 'show']);
