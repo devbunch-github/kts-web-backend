@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\BeauticianController;
 use App\Http\Controllers\Api\ContactController;
@@ -9,6 +10,11 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\WebhookController;
+use App\Http\Controllers\Api\Admin\DashboardController;
+use App\Http\Controllers\Api\Admin\AdminIncomeController;
+use App\Http\Controllers\Api\Admin\AdminExpenseController;
+use App\Http\Controllers\Api\Admin\PaymentSettingController;
+use App\Http\Controllers\Api\Admin\SmsPackageController;
 use App\Http\Controllers\Api\IncomeController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\CategoryController;
@@ -50,11 +56,34 @@ Route::post('/payment/confirm', [PaymentController::class, 'confirmPayment']);
 Route::post('/webhook/stripe',[WebhookController::class,'handleStripe']);
 Route::post('/webhook/paypal',[WebhookController::class,'handlePayPal']);
 
-Route::get('/test-auth', function () {
-    return response()->json(['user' => Auth::user()]);
+// Super Admin
+Route::get('/admin/dashboard', [DashboardController::class, 'index']);
+Route::get('/admin/income/{user_id}', [AdminIncomeController::class, 'show']);
+Route::get('/admin/expense/{user_id}', [AdminExpenseController::class, 'show']);
+Route::get('/admin/payment-settings', [PaymentSettingController::class, 'show']);
+Route::post('/admin/payment-settings', [PaymentSettingController::class, 'update']);
+
+//SMS Packages
+Route::prefix('admin')->group(function () {
+
+    // List all packages
+    Route::get('/sms-packages', [SmsPackageController::class, 'index']);
+
+    // Create new package
+    Route::post('/sms-packages', [SmsPackageController::class, 'store']);
+
+    // Get a specific package (for editing)
+    Route::get('/sms-packages/{id}', [SmsPackageController::class, 'show']);
+
+    // Update package
+    Route::put('/sms-packages/{id}', [SmsPackageController::class, 'update']);
+
+    // Delete package
+    Route::delete('/sms-packages/{id}', [SmsPackageController::class, 'destroy']);
+
+    // SMS Purchase Blance
+    Route::get('/sms-purchase-balance', [SmsPackageController::class, 'purchasebalance']);
 });
-
-
 
 
 Route::middleware('auth:sanctum')->group(function () {

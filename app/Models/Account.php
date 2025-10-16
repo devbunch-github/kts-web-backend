@@ -9,7 +9,7 @@ class Account extends Model
     protected $connection = 'sqlsrv';
     protected $table = 'Accounts';
     public $timestamps = false;
-    protected $primaryKey = 'Id'; 
+    protected $primaryKey = 'Id';
 
     protected $fillable = [
         'Name',
@@ -46,6 +46,16 @@ class Account extends Model
     public function bkUser()
     {
         return $this->belongsTo(BkUser::class, 'UserId', 'Id');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(BkUser::class, 'UserId', 'Id');
+    }
+
+    public function incomes()
+    {
+        return $this->hasMany(Income::class, 'AccountId', 'Id');
     }
 
 
