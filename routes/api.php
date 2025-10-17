@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\ExpenseController;
 use App\Http\Controllers\Api\FileUploadController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\EmployeeController;
+use App\Http\Controllers\Api\AppointmentController;
 
 
 Route::get('/beauticians', [BeauticianController::class, 'index']);
@@ -109,6 +110,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/employees/{employee}/calendar', [EmployeeController::class, 'calendar']);
     Route::get('/employees/{id}/schedule', [EmployeeController::class, 'weekSchedule']);
     Route::post('/employees/{id}/schedule', [EmployeeController::class, 'storeSchedule']);
+
+    Route::apiResource('appointments', AppointmentController::class);
 
 
     Route::prefix('admin')->group(function () {
