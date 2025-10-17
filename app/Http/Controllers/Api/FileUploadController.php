@@ -18,23 +18,24 @@ class FileUploadController extends Controller
 
         $file = $request->file('file');
         $extension = strtolower($file->getClientOriginalExtension());
+        $type = $request->get('type', 'services'); // ✅ detect source
 
-        $folder = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'])
-            ? 'uploads/services/images'
-            : 'uploads/services/files';
+        $folder = match ($type) {
+            'employees' => 'uploads/employees/images',
+            default => (in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'])
+                ? 'uploads/services/images'
+                : 'uploads/services/files'),
+        };
 
         $filename = Str::uuid() . '.' . $extension;
         $path = $file->storeAs($folder, $filename, 'public');
-
         $publicPath = asset('storage/' . $path);
 
         return response()->json([
             'success' => true,
-            'filename' => $file->getClientOriginalName(),
-            'path' => $publicPath,
+            'path' => 'storage/' . $path,
             'url'  => $publicPath,
             'uploaded_by' => Auth::id(),
         ]);
     }
-
 }

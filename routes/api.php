@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ExpenseController;
 use App\Http\Controllers\Api\FileUploadController;
 use App\Http\Controllers\Api\CustomerController;
+use App\Http\Controllers\Api\EmployeeController;
 
 
 Route::get('/beauticians', [BeauticianController::class, 'index']);
@@ -100,6 +101,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/services', [ServiceController::class, 'index']);
 
     Route::get('/income/export/pdf', [IncomeController::class, 'exportPdf']);
+
+    Route::apiResource('employees', EmployeeController::class);
+    Route::get('/employees/{employee}/time-offs', [EmployeeController::class, 'timeOffs']);
+    Route::post('/employees/{employee}/time-offs', [EmployeeController::class, 'storeTimeOff']);
+    // Route::get('/employees/{employee}/schedule', [EmployeeController::class, 'schedule']);
+    Route::get('/employees/{employee}/calendar', [EmployeeController::class, 'calendar']);
+    Route::get('/employees/{id}/schedule', [EmployeeController::class, 'weekSchedule']);
+    Route::post('/employees/{id}/schedule', [EmployeeController::class, 'storeSchedule']);
+
 
     Route::prefix('admin')->group(function () {
         Route::apiResource('expenses', ExpenseController::class);
