@@ -3,40 +3,109 @@
 namespace App\Repositories\Eloquent;
 
 use App\Models\Service;
+use Illuminate\Support\Facades\Auth;
 
 class ServiceRepository
 {
-    public function listByAccount(?int $accountId)
+    public function listByAccount(int $accountId)
     {
-        if (!$accountId) {
-            return collect(); // return empty collection
-        }
-
-        return Service::where('AccountId', $accountId)
+        return Service::where('AccountId',$accountId)
+            ->where('IsDeleted',0)
             ->orderBy('Name')
             ->get();
     }
 
-
-    public function find(int $id)
+    public function findByAccount(int $accountId,int $id): Service
     {
-        return Service::findOrFail($id);
+        return Service::where('AccountId',$accountId)
+            ->where('Id',$id)
+            ->where('IsDeleted',0)
+            ->firstOrFail();
     }
 
-    public function create(array $data)
+    public function create(array $data): Service
     {
-        return Service::create($data);
+        $user = Auth::user();
+        $createdById = $user?->bkUser?->Id ?? null;
+
+        $depositType = match (strtolower($data['DepositType'] ?? '')) {
+            'percentage' => 0,
+            'fixed' => 1,
+            default => null,
+        };
+
+        return Service::create([
+            'AccountId'  => $user?->bkUser?->account?->Id,
+            'CategoryId' => $data['CategoryId'] ?? null,
+            'Name'       => $data['Name'],
+            'TotalPrice' => $data['TotalPrice'] ?? 0,
+            'DepositType' => $depositType,
+            'Deposit'    => $data['Deposit'] ?? 0,
+            'DefaultAppointmentDuration' => $data['DefaultAppointmentDuration'] ?? 0,
+            'Description' => $data['Description'] ?? null,
+            'FilePath'   => $data['FilePath'] ?? null,
+            'ImagePath'  => $data['ImagePath'] ?? null,
+            'DateCreated' => now(),
+            'CreatedById' => $createdById,
+            'IsDeleted'  => 0,
+        ]);
     }
 
-    public function update(int $id, array $data)
+    public function update(int $accountId, int $id, array $data): Service
     {
-        $service = Service::findOrFail($id);
-        $service->update($data);
-        return $service;
+        $row = $this->findByAccount($accountId, $id);
+
+        $user = Auth::user();
+        $modifiedById = $user?->bkUser?->Id ?? null;
+
+        $depositType = match (strtolower($data['DepositType'] ?? '')) {
+            'percentage' => 0,
+            'fixed' => 1,
+            default => null,
+        };
+
+        $row->update([
+            'CategoryId' => $data['CategoryId'] ?? $row->CategoryId,
+            'Name'       => $data['Name'] ?? $row->Name,
+            'TotalPrice' => $data['TotalPrice'] ?? $row->TotalPrice,
+            'DepositType' => $depositType,
+            'Deposit'    => $data['Deposit'] ?? $row->Deposit,
+            'DefaultAppointmentDuration' => $data['DefaultAppointmentDuration'] ?? $row->DefaultAppointmentDuration,
+            'Description' => $data['Description'] ?? $row->Description,
+            'FilePath'   => $data['FilePath'] ?? $row->FilePath,
+            'ImagePath'  => $data['ImagePath'] ?? $row->ImagePath,
+            'DateModified' => now(),
+            'ModifiedById' => $modifiedById,
+        ]);
+
+        return $row->refresh();
     }
 
-    public function delete(int $id)
+
+    public function softDelete(int $accountId,int $id): bool
     {
-        Service::where('Id', $id)->delete();
+        $row = $this->findByAccount($accountId,$id);
+        $user = Auth::user();
+        $modifiedById = $user->bkUser->Id;
+        $row->update([
+            'IsDeleted'=>1,
+            'DateModified'=>now(),
+            'ModifiedById'=>$modifiedById,
+        ]);
+        return true;
+    }
+
+    public function softDeleteByCategory(int $accountId,int $categoryId): int
+    {
+        $user = Auth::user();
+        $modifiedById = $user->bkUser->Id;
+
+        return Service::where('AccountId',$accountId)
+            ->where('CategoryId',$categoryId)
+            ->update([
+                'IsDeleted'=>1,
+                'DateModified'=>now(),
+                'ModifiedById'=>$modifiedById,
+            ]);
     }
 }

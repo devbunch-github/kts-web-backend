@@ -10,7 +10,7 @@ use App\Models\Account;
 use App\Models\Expense;
 use Carbon\Carbon;
 
-class ExpenseController extends Controller
+class AdminExpenseController extends Controller
 {
     public function show($user_id)
     {

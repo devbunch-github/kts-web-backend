@@ -23,7 +23,7 @@ class PlanSeeder extends Seeder
                     'Basic support',
                     'Monthly billing',
                 ],
-                'stripe_plan_id' => null, // set when you create plan in Stripe
+                'stripe_plan_id' => 'price_1SF88XG2MCMdX4izKmTwu4Ts', // set when you create plan in Stripe
                 'paypal_plan_id' => null, // set when you create plan in PayPal
                 'is_active' => true,
             ],

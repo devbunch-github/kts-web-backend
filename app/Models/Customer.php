@@ -13,11 +13,16 @@ class Customer extends Model
 
     protected $fillable = [
         'Name',
-        'Email',
         'MobileNumber',
+        'Email',
         'AccountId',
-        'CreatedById',
+        'DateOfBirth',
+        'Note',
         'DateCreated',
+        'DateModified',
+        'CreatedById',
+        'ModifiedById',
+        'is_deleted',
     ];
 
     protected static function booted()

@@ -12,12 +12,17 @@ use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\WebhookController;
 use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\AdminIncomeController;
-use App\Http\Controllers\Api\Admin\ExpenseController;
+use App\Http\Controllers\Api\Admin\AdminExpenseController;
 use App\Http\Controllers\Api\Admin\PaymentSettingController;
 use App\Http\Controllers\Api\Admin\SmsPackageController;
 use App\Http\Controllers\Api\IncomeController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\ExpenseController;
+use App\Http\Controllers\Api\FileUploadController;
+use App\Http\Controllers\Api\CustomerController;
+use App\Http\Controllers\Api\EmployeeController;
+use App\Http\Controllers\Api\AppointmentController;
 
 
 Route::get('/beauticians', [BeauticianController::class, 'index']);
@@ -56,7 +61,7 @@ Route::post('/webhook/paypal',[WebhookController::class,'handlePayPal']);
 // Super Admin
 Route::get('/admin/dashboard', [DashboardController::class, 'index']);
 Route::get('/admin/income/{user_id}', [AdminIncomeController::class, 'show']);
-Route::get('/admin/expense/{user_id}', [ExpenseController::class, 'show']);
+Route::get('/admin/expense/{user_id}', [AdminExpenseController::class, 'show']);
 Route::get('/admin/payment-settings', [PaymentSettingController::class, 'show']);
 Route::post('/admin/payment-settings', [PaymentSettingController::class, 'update']);
 
@@ -82,7 +87,11 @@ Route::prefix('admin')->group(function () {
     Route::get('/sms-purchase-balance', [SmsPackageController::class, 'purchasebalance']);
 });
 
-// Route::middleware('auth:sanctum')->group(function () {
+
+Route::middleware('auth:sanctum')->group(function () {
+
+    Route::post('/file-upload', [FileUploadController::class, 'store']);
+
     Route::get('/income', [IncomeController::class, 'index']);
     Route::post('/income', [IncomeController::class, 'store']);
     Route::get('/income/{id}', [IncomeController::class, 'show']);
@@ -94,7 +103,52 @@ Route::prefix('admin')->group(function () {
 
     Route::get('/income/export/pdf', [IncomeController::class, 'exportPdf']);
 
-// });
+    Route::apiResource('employees', EmployeeController::class);
+    Route::get('/employees/{employee}/time-offs', [EmployeeController::class, 'timeOffs']);
+    Route::post('/employees/{employee}/time-offs', [EmployeeController::class, 'storeTimeOff']);
+    // Route::get('/employees/{employee}/schedule', [EmployeeController::class, 'schedule']);
+    Route::get('/employees/{employee}/calendar', [EmployeeController::class, 'calendar']);
+    Route::get('/employees/{id}/schedule', [EmployeeController::class, 'weekSchedule']);
+    Route::post('/employees/{id}/schedule', [EmployeeController::class, 'storeSchedule']);
+
+    Route::apiResource('appointments', AppointmentController::class);
+
+
+    Route::prefix('admin')->group(function () {
+        Route::apiResource('expenses', ExpenseController::class);
+        Route::get('expenses/export/pdf', [ExpenseController::class, 'exportPdf']);
+
+        // Services CRUD
+        Route::get('services/{id}', [ServiceController::class, 'show']);
+        Route::post('services', [ServiceController::class, 'store']);
+        Route::put('services/{id}', [ServiceController::class, 'update']);
+        Route::delete('services/{id}', [ServiceController::class, 'destroy']);
+
+        // Categories CRUD
+        Route::get('categories/{id}', [CategoryController::class, 'show']);
+        Route::post('categories', [CategoryController::class, 'store']);
+        Route::put('categories/{id}', [CategoryController::class, 'update']);
+        Route::delete('categories/{id}', [CategoryController::class, 'destroy']);
+
+        Route::get('/customers', [CustomerController::class, 'index']);
+        Route::get('/customers/{id}', [CustomerController::class, 'show']);
+        Route::post('/customers', [CustomerController::class, 'store']);
+        Route::put('/customers/{id}', [CustomerController::class, 'update']);
+        Route::delete('/customers/{id}', [CustomerController::class, 'destroy']);
+    });
+
+});
+
+// Subscription Packages
+Route::post('/admin/plans', [PlanController::class, 'store']);
+Route::get('/admin/plans', [PlanController::class, 'index']);
+Route::post('/admin/plans', [PlanController::class, 'store']);
+Route::get('/admin/plans/{id}', [PlanController::class, 'show']);
+Route::put('/admin/plans/{id}', [PlanController::class, 'update']);
+Route::delete('/admin/plans/{id}', [PlanController::class, 'destroy']);
+
+Route::get('/admin/subscriptions', [SubscriptionController::class, 'getSubscriptions']);
+Route::post('/admin/subscriptions/{id}/cancel', [SubscriptionController::class, 'cancel']);
 
 // Subscription Packages
 Route::post('/admin/plans', [PlanController::class, 'store']);

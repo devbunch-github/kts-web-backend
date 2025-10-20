@@ -4,40 +4,71 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\Request;
 use App\Repositories\Eloquent\CategoryRepository;
+use App\Repositories\Eloquent\ServiceRepository;
 use App\Models\User;
+use App\Http\Requests\BusinessAdmin\CategoryStoreRequest;
+use App\Http\Requests\BusinessAdmin\CategoryUpdateRequest;
 
 class CategoryController extends Controller
 {
-    public function __construct(protected CategoryRepository $categories) {}
+    public function __construct(
+        protected CategoryRepository $categories,
+        protected ServiceRepository $services
+    ) {}
 
     protected function currentAccountId(): ?int
     {
-        // ✅ 1) Normal authenticated user
-        if (Auth::check()) {
-            return Auth::user()?->bkUser?->account?->Id;
-        }
+        if (Auth::check()) return Auth::user()?->bkUser?->account?->Id;
 
-        // ✅ 2) Fallback for preRegister (user ID from header)
         $userId = request()->header('X-User-Id') ?? request('user_id');
         if ($userId) {
-            $user = User::find($userId);
-            return $user?->bkUser?->account?->Id;
+            $u = User::find($userId);
+            return $u?->bkUser?->account?->Id;
         }
-
         return null;
     }
 
-    public function index(Request $request)
+    public function index()
     {
-        $accountId = $this->currentAccountId();
+        $accId = $this->currentAccountId();
+        if (!$accId) return response()->json(['message'=>'No account found'],404);
 
-        if (!$accountId) {
-            return response()->json(['message' => 'No account found'], 404);
-        }
+        return response()->json(['data'=>$this->categories->listByAccount($accId)]);
+    }
 
-        $list = $this->categories->listByAccount($accountId);
-        return response()->json(['data' => $list]);
+    public function show($id)
+    {
+        $accId = $this->currentAccountId();
+        if (!$accId) return response()->json(['message'=>'No account found'],404);
+
+        return response()->json(['data'=>$this->categories->findByAccount($accId,(int)$id)]);
+    }
+
+    public function store(CategoryStoreRequest $request)
+    {
+        $row = $this->categories->create($request->validated());
+        return response()->json(['data'=>$row],201);
+    }
+
+    public function update(CategoryUpdateRequest $request, $id)
+    {
+        $accId = $this->currentAccountId();
+        if (!$accId) return response()->json(['message'=>'No account found'],404);
+
+        $row = $this->categories->update($accId,(int)$id,$request->validated());
+        return response()->json(['data'=>$row]);
+    }
+
+    public function destroy($id)
+    {
+        $accId = $this->currentAccountId();
+        if (!$accId) return response()->json(['message'=>'No account found'],404);
+
+        // popup says: removing category removes all services => soft delete services, then delete category
+        $this->services->softDeleteByCategory($accId,(int)$id);
+        $this->categories->deleteHard($accId,(int)$id);
+
+        return response()->json(['message'=>'Deleted']);
     }
 }
