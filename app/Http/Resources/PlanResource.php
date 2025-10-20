@@ -12,6 +12,7 @@ class PlanResource extends JsonResource {
             'price'=>number_format($this->price_minor/100, 2),
             'price_minor'=>$this->price_minor,
             'currency'=>$this->currency,
+            'duration' => $this->duration,
             'features'=>$this->features ?? [],
         ];
     }

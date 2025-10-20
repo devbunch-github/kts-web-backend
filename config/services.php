@@ -44,6 +44,7 @@ return [
         'client_id' => env('PAYPAL_CLIENT_ID'),
         'secret' => env('PAYPAL_SECRET'),
         'mode' => env('PAYPAL_MODE', 'sandbox'),
+        'product_id' => env('PAYPAL_PRODUCT_ID'),
     ],
 
 

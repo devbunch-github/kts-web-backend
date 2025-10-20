@@ -95,3 +95,14 @@ Route::prefix('admin')->group(function () {
     Route::get('/income/export/pdf', [IncomeController::class, 'exportPdf']);
 
 // });
+
+// Subscription Packages
+Route::post('/admin/plans', [PlanController::class, 'store']);
+Route::get('/admin/plans', [PlanController::class, 'index']);
+Route::post('/admin/plans', [PlanController::class, 'store']);
+Route::get('/admin/plans/{id}', [PlanController::class, 'show']);
+Route::put('/admin/plans/{id}', [PlanController::class, 'update']);
+Route::delete('/admin/plans/{id}', [PlanController::class, 'destroy']);
+
+Route::get('/admin/subscriptions', [SubscriptionController::class, 'getSubscriptions']);
+Route::post('/admin/subscriptions/{id}/cancel', [SubscriptionController::class, 'cancel']);

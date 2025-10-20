@@ -57,4 +57,22 @@ class PayPalService
 
         return json_decode($res->body(), true);
     }
+
+    public function cancelSubscription(string $subscriptionId)
+    {
+        $token = $this->token();
+
+        $response = $this->client->withHeaders([
+            'Authorization' => "Bearer {$token}",
+        ])->post("{$this->baseUrl}/v1/billing/subscriptions/{$subscriptionId}/cancel", [
+            'reason' => 'Cancelled by admin via backend',
+        ]);
+
+        if (!$response->successful()) {
+            throw new \Exception('PayPal cancellation failed: ' . $response->body());
+        }
+
+        return true;
+    }
+
 }

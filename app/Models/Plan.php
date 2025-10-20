@@ -9,7 +9,7 @@ class Plan extends Model
 {
     use HasFactory;
 
-    protected $fillable=['name','price_minor','currency','features','is_active'];
+    protected $fillable=['name','price_minor','currency', 'duration', 'features','is_active', 'stripe_plan_id', 'paypal_plan_id'];
     protected $casts=['features'=>'array','is_active'=>'bool'];
 
     public function subscriptions()
