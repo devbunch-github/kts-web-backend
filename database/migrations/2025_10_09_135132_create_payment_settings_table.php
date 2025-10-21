@@ -13,12 +13,23 @@ return new class extends Migration
     {
         Schema::create('payment_settings', function (Blueprint $t) {
             $t->id();
-            $t->unsignedBigInteger('user_id')->nullable(); // super admin id
-            $t->string('paypal_client_id')->nullable();
-            $t->string('paypal_client_secret')->nullable();
+            $t->unsignedBigInteger('user_id')->nullable();
+            $t->unsignedBigInteger('AccountId')->nullable();
+
+            // PayPal fields
+            $t->boolean('paypal_active')->default(false);
+            $t->text('paypal_client_id')->nullable();
+            $t->text('paypal_client_secret')->nullable();
             $t->string('paypal_email')->nullable();
-            $t->string('stripe_public_key')->nullable();
-            $t->string('stripe_secret_key')->nullable();
+
+            // Stripe fields
+            $t->boolean('stripe_active')->default(false);
+            $t->text('stripe_public_key')->nullable();
+            $t->text('stripe_secret_key')->nullable();
+
+            // Pay at venue
+            $t->boolean('pay_at_venue')->default(false);
+
             $t->timestamps();
         });
     }

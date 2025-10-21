@@ -7,6 +7,8 @@ use App\Repositories\Eloquent\CustomerRepository;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\CustomerReview;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Exception;
@@ -127,6 +129,78 @@ class CustomerController extends Controller
         } catch (Exception $e) {
             Log::error('CustomerController@destroy: '.$e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to delete customer.'], 500);
+        }
+    }
+
+    public function reviews()
+    {
+        // return response()->json(['message'=>$this->currentAccountId()],200);
+        try {
+            $accId = $this->currentAccountId();
+            if (!$accId) return response()->json(['message' => 'No account found'], 404);
+
+            $reviews = CustomerReview::where('AccountId', $accId)
+                ->orderByDesc('created_at')
+                ->get();
+
+            return response()->json(['success' => true, 'data' => $reviews]);
+        } catch (\Exception $e) {
+            \Log::error('CustomerController@reviews: '.$e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Unable to load reviews.'], 500);
+        }
+    }
+
+    public function updateReviewStatus(Request $request, $id)
+    {
+        try {
+            $accId = $this->currentAccountId();
+            if (!$accId) return response()->json(['message'=>'No account found'],404);
+
+            $review = CustomerReview::where('AccountId', $accId)->findOrFail($id);
+            $review->status = $request->boolean('status');
+            $review->save();
+
+            return response()->json(['success' => true, 'message' => 'Review status updated successfully.']);
+        } catch (\Exception $e) {
+            \Log::error('CustomerController@updateReviewStatus: '.$e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to update review status.'], 500);
+        }
+    }
+
+    public function bulkUpdateReviewStatus(Request $request)
+    {
+        try {
+            $accId = $this->currentAccountId();
+            if (!$accId) return response()->json(['message'=>'No account found'],404);
+
+            $validated = $request->validate([
+                'ids' => 'required|array|min:1',
+                'status' => 'required|boolean',
+            ]);
+
+            CustomerReview::where('AccountId', $accId)
+                ->whereIn('id', $validated['ids'])
+                ->update(['status' => $validated['status']]);
+
+            return response()->json(['success' => true, 'message' => 'Bulk status update successful.']);
+        } catch (\Exception $e) {
+            \Log::error('CustomerController@bulkUpdateReviewStatus: '.$e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed bulk update.'], 500);
+        }
+    }
+
+    public function destroyReview($id)
+    {
+        try {
+            $accId = $this->currentAccountId();
+            if (!$accId) return response()->json(['message'=>'No account found'],404);
+
+            CustomerReview::where('AccountId', $accId)->where('id', $id)->delete();
+
+            return response()->json(['success' => true, 'message' => 'Review deleted successfully.']);
+        } catch (\Exception $e) {
+            \Log::error('CustomerController@destroyReview: '.$e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to delete review.'], 500);
         }
     }
 }

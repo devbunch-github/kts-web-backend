@@ -135,6 +135,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/customers', [CustomerController::class, 'store']);
         Route::put('/customers/{id}', [CustomerController::class, 'update']);
         Route::delete('/customers/{id}', [CustomerController::class, 'destroy']);
+
+        // Customer Reviews
+        Route::get('/customer/reviews', [CustomerController::class, 'reviews']);
+        Route::post('/customer/reviews/{id}/status', [CustomerController::class, 'updateReviewStatus']);
+        Route::post('/customer/reviews/bulk-status', [CustomerController::class, 'bulkUpdateReviewStatus']);
+        Route::delete('/customer/reviews/{id}', [CustomerController::class, 'destroyReview']);
     });
 
 });

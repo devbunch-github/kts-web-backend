@@ -22,11 +22,14 @@ class PaymentSettingController extends Controller
     {
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
+            'paypal_active' => 'nullable|boolean',
             'paypal_client_id' => 'nullable|string|max:255',
             'paypal_client_secret' => 'nullable|string|max:255',
             'paypal_email' => 'nullable|string|max:255',
+            'stripe_active' => 'nullable|boolean',
             'stripe_public_key' => 'nullable|string|max:255',
             'stripe_secret_key' => 'nullable|string|max:255',
+            'pay_at_venue' => 'nullable|boolean',
         ]);
 
         $user = User::findOrFail($request->user_id);
@@ -34,18 +37,23 @@ class PaymentSettingController extends Controller
         $setting = PaymentSetting::updateOrCreate(
             ['user_id' => $user->id],
             [
+                'paypal_active' => $request->boolean('paypal_active'),
                 'paypal_client_id' => $validated['paypal_client_id'] ?? null,
                 'paypal_client_secret' => $validated['paypal_client_secret'] ?? null,
                 'paypal_email' => $validated['paypal_email'] ?? null,
+
+                'stripe_active' => $request->boolean('stripe_active'),
                 'stripe_public_key' => $validated['stripe_public_key'] ?? null,
                 'stripe_secret_key' => $validated['stripe_secret_key'] ?? null,
+
+                'pay_at_venue' => $request->boolean('pay_at_venue'),
             ]
         );
 
         return response()->json([
             'success' => true,
-            'message' => 'Payment settings saved successfully.',
-            'data' => $setting
+            'message' => 'Payment settings saved securely.',
+            'data' => $setting,
         ]);
     }
 }
