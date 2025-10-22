@@ -14,7 +14,7 @@ class AuthService
     /**
      * Determine the primary role based on hierarchy
      */
-    private function getPrimaryRole($roles)
+    public function getPrimaryRole($roles)
     {
         // Define role hierarchy (highest to lowest priority)
         $hierarchy = [
@@ -65,7 +65,7 @@ class AuthService
         $redirects = [
             'super_admin' => '/admin/dashboard',
             'accountant'  => '/accountant/dashboard',
-            'business'    => '/business/dashboard',
+            'business'    => '/dashboard',
         ];
 
         $redirectUrl = $redirects[$primaryRole] ?? '/dashboard';

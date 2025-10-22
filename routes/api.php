@@ -141,6 +141,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/customer/reviews/{id}/status', [CustomerController::class, 'updateReviewStatus']);
         Route::post('/customer/reviews/bulk-status', [CustomerController::class, 'bulkUpdateReviewStatus']);
         Route::delete('/customer/reviews/{id}', [CustomerController::class, 'destroyReview']);
+
+        // SMS Packages
+        Route::get('/sms-packages', [SmsPackageController::class, 'getSmsPackages']);
     });
 
 });

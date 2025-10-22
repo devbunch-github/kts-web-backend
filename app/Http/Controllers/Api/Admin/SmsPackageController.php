@@ -82,4 +82,14 @@ class SmsPackageController extends Controller
             'data' => $data,
         ]);
     }
+
+    public function getSmsPackages()
+    {
+        $packages = SmsPackage::select('id', 'name', 'price', 'total_sms')->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $packages
+        ]);
+    }
 }

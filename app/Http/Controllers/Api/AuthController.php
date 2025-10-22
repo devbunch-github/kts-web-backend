@@ -44,10 +44,37 @@ class AuthController extends Controller {
         // Create token - this will now work with HasApiTokens trait
         $token = $user->createToken('auth-token')->plainTextToken;
 
+        // Get user roles using Spatie
+        $roles = $user->getRoleNames(); // Returns collection of role names
+
+        // Determine primary role for redirect (using hierarchy)
+        $primaryRole = $this->auth->getPrimaryRole($roles);
+        
+        // Define redirect URLs per role
+        $redirects = [
+            'super_admin' => '/admin/dashboard',
+            'accountant'  => '/accountant/dashboard',
+            'business'    => '/business/dashboard',
+        ];
+
+        $redirectUrl = $redirects[$primaryRole] ?? '/dashboard';
+
+        // Get user permissions (optional - if you want to send them to frontend)
+        $permissions = $user->getAllPermissions()->pluck('name');
+
         return response()->json([
             'message' => 'Logged in successfully',
-            'user' => $user,
             'token' => $token,
+            'user' => $user,
+            'user_data'     => [
+                'id'    => $user->id,
+                'name'  => $user->name,
+                'email' => $user->email,
+                'role'  => $primaryRole,
+                'roles' => $roles,
+                'permissions' => $permissions,
+            ],
+            'redirect_url' => $redirectUrl,
         ]);
     }
 
@@ -132,4 +159,3 @@ class AuthController extends Controller {
     }
 
 }
-
