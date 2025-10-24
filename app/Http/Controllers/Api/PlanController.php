@@ -9,6 +9,7 @@ use App\Http\Resources\PlanResource;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\App;
 use App\Models\Plan;
+use App\Models\Subscription;
 
 class PlanController extends Controller {
     public function __construct(private PlanService $plans) {}
@@ -329,59 +330,152 @@ class PlanController extends Controller {
 
     public function destroy($id)
     {
-        $plan = \App\Models\Plan::find($id);
+        $plan = Plan::find($id);
         if (!$plan) {
             return response()->json(['message'=>'Plan not found.'], 404);
         }
 
+        // try {
+        //     // ===== STRIPE: deactivate price (and optionally archive product) =====
+        //     \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+
+        //     try {
+        //         \Stripe\Price::update($plan->stripe_plan_id, ['active' => false]);
+        //     } catch (\Throwable $e) {
+        //         \Log::warning('Stripe deactivate price warning: '.$e->getMessage());
+        //     }
+
+        //     // Optional: also archive product if you want (and if no other prices)
+        //     try {
+        //         $price  = \Stripe\Price::retrieve($plan->stripe_plan_id);
+        //         $prodId = is_string($price->product) ? $price->product : $price->product->id;
+        //         \Stripe\Product::update($prodId, ['active' => false]); // archive
+        //     } catch (\Throwable $e) {
+        //         \Log::info('Stripe product archive skipped: '.$e->getMessage());
+        //     }
+
+        //     // ===== PAYPAL: deactivate plan =====
+        //     $verify = app()->environment('local') ? false : true;
+        //     $paypal = new \GuzzleHttp\Client([
+        //         'base_uri' => 'https://api-m.sandbox.paypal.com/',
+        //         'verify'   => $verify,
+        //     ]);
+
+        //     $paypalToken = json_decode($paypal->post('v1/oauth2/token', [
+        //         'auth'        => [config('services.paypal.client_id'), config('services.paypal.secret')],
+        //         'form_params' => ['grant_type' => 'client_credentials'],
+        //     ])->getBody(), true)['access_token'];
+
+        //     try {
+        //         $paypal->post("v1/billing/plans/{$plan->paypal_plan_id}/deactivate", [
+        //             'headers' => ['Authorization' => "Bearer $paypalToken"],
+        //         ]);
+        //     } catch (\Throwable $e) {
+        //         \Log::warning('PayPal deactivate warning: '.$e->getMessage());
+        //     }
+
+        //     // ===== DB: delete plan row =====
+        //     $plan->delete();
+
+        //     return response()->json(['message'=>'Plan deleted successfully.'], 200);
+
+        // } catch (\Throwable $e) {
+        //     \Log::error('Plan delete failed: '.$e->getMessage());
+        //     return response()->json(['message'=>'Delete failed.','error'=>$e->getMessage()], 500);
+        // }
+
         try {
-            // ===== STRIPE: deactivate price (and optionally archive product) =====
-            \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+            // Cancel all subscriptions for this plan
+            $subscriptions = Subscription::where('plan_id', $id)->get();
 
+            foreach ($subscriptions as $sub) {
+                // Cancel in Stripe
+                if ($sub->payment_provider === 'stripe' && $sub->payment_reference) {
+                    try {
+                        \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+
+                        $session = \Stripe\Checkout\Session::retrieve($sub->payment_reference);
+
+                        if (!empty($session->subscription)) {
+                            \Stripe\Subscription::update($session->subscription, [
+                                'cancel_at_period_end' => true,
+                            ]);
+                        }
+                    } catch (\Throwable $e) {
+                        \Log::warning("Stripe cancel failed for subscription {$sub->id}: " . $e->getMessage());
+                    }
+                }
+
+                // Cancel in PayPal
+                if ($sub->payment_provider === 'paypal' && $sub->payment_reference) {
+                    try {
+                        $paypal = new \GuzzleHttp\Client(['base_uri' => 'https://api-m.sandbox.paypal.com/']);
+                        $paypalToken = json_decode($paypal->post('v1/oauth2/token', [
+                            'auth'        => [config('services.paypal.client_id'), config('services.paypal.secret')],
+                            'form_params' => ['grant_type' => 'client_credentials'],
+                        ])->getBody(), true)['access_token'];
+
+                        $paypal->post("v1/billing/subscriptions/{$sub->payment_reference}/cancel", [
+                            'headers' => [
+                                'Authorization' => "Bearer $paypalToken",
+                                'Content-Type'  => 'application/json',
+                            ],
+                            'json' => ['reason' => 'Package deleted by Super Admin'],
+                        ]);
+                    } catch (\Throwable $e) {
+                        \Log::warning("PayPal cancel failed for subscription {$sub->id}: " . $e->getMessage());
+                    }
+                }
+
+                // Mark the subscription as ended
+                $sub->update(['ends_at' => now()]);
+            }
+
+            // Remove foreign key link before deleting plan
+            // (Set plan_id = NULL for all subscriptions using this plan)
+            \DB::table('subscriptions')->where('plan_id', $id)->update(['plan_id' => null]);
+
+            // Delete the plan itself
+            $plan->delete();
+
+            // If deleted successfully → deactivate on Stripe and PayPal
             try {
+                \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
                 \Stripe\Price::update($plan->stripe_plan_id, ['active' => false]);
+                $price = \Stripe\Price::retrieve($plan->stripe_plan_id);
+                $productId = is_string($price->product) ? $price->product : $price->product->id;
+                \Stripe\Product::update($productId, ['active' => false]);
             } catch (\Throwable $e) {
-                \Log::warning('Stripe deactivate price warning: '.$e->getMessage());
+                \Log::warning('Stripe deactivate warning: ' . $e->getMessage());
             }
 
-            // Optional: also archive product if you want (and if no other prices)
             try {
-                $price  = \Stripe\Price::retrieve($plan->stripe_plan_id);
-                $prodId = is_string($price->product) ? $price->product : $price->product->id;
-                \Stripe\Product::update($prodId, ['active' => false]); // archive
-            } catch (\Throwable $e) {
-                \Log::info('Stripe product archive skipped: '.$e->getMessage());
-            }
+                $paypal = new \GuzzleHttp\Client(['base_uri' => 'https://api-m.sandbox.paypal.com/']);
+                $paypalToken = json_decode($paypal->post('v1/oauth2/token', [
+                    'auth'        => [config('services.paypal.client_id'), config('services.paypal.secret')],
+                    'form_params' => ['grant_type' => 'client_credentials'],
+                ])->getBody(), true)['access_token'];
 
-            // ===== PAYPAL: deactivate plan =====
-            $verify = app()->environment('local') ? false : true;
-            $paypal = new \GuzzleHttp\Client([
-                'base_uri' => 'https://api-m.sandbox.paypal.com/',
-                'verify'   => $verify,
-            ]);
-
-            $paypalToken = json_decode($paypal->post('v1/oauth2/token', [
-                'auth'        => [config('services.paypal.client_id'), config('services.paypal.secret')],
-                'form_params' => ['grant_type' => 'client_credentials'],
-            ])->getBody(), true)['access_token'];
-
-            try {
                 $paypal->post("v1/billing/plans/{$plan->paypal_plan_id}/deactivate", [
                     'headers' => ['Authorization' => "Bearer $paypalToken"],
                 ]);
             } catch (\Throwable $e) {
-                \Log::warning('PayPal deactivate warning: '.$e->getMessage());
+                \Log::warning('PayPal deactivate warning: ' . $e->getMessage());
             }
 
-            // ===== DB: delete plan row =====
-            $plan->delete();
-
-            return response()->json(['message'=>'Plan deleted successfully.'], 200);
+            return response()->json([
+                'success' => true,
+                'message' => 'Plan deleted successfully and user subscriptions canceled.'
+            ], 200);
 
         } catch (\Throwable $e) {
-            \Log::error('Plan delete failed: '.$e->getMessage());
-            return response()->json(['message'=>'Delete failed.','error'=>$e->getMessage()], 500);
-        }
+            \Log::error('Plan delete failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Delete failed.',
+                'error' => $e->getMessage(),
+            ], 500);
+    }
     }
 
 

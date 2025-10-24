@@ -88,5 +88,5 @@ class Income extends Model
         return $this->belongsTo(AccountingPeriod::class, 'AccountingPeriodId', 'Id');
     }
 
-    
+
 }

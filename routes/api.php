@@ -23,6 +23,9 @@ use App\Http\Controllers\Api\FileUploadController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\AppointmentController;
+use App\Http\Controllers\Api\AccountantController;
+use App\Http\Controllers\Api\Accountant\Auth\LoginController;
+use App\Http\Controllers\Accountant\AcctDashboardController;
 
 
 Route::get('/beauticians', [BeauticianController::class, 'index']);
@@ -88,6 +91,9 @@ Route::prefix('admin')->group(function () {
 });
 
 
+// Accountant Dashboard Login
+Route::post('/accountant/login', [LoginController::class, 'login']);
+
 Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/file-upload', [FileUploadController::class, 'store']);
@@ -144,7 +150,16 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // SMS Packages
         Route::get('/sms-packages', [SmsPackageController::class, 'getSmsPackages']);
+
+        // Accountant
+        Route::apiResource('accountants', AccountantController::class);
+        Route::post('accountants/{id}/reset-password', [AccountantController::class, 'resetPassword']);
+        Route::patch('/accountants/{id}/toggle-access', [AccountantController::class, 'toggleAccess']);
+        Route::get('/accountants/{id}', [AccountantController::class, 'show']);
     });
+
+    // Accountant Dashboard
+    Route::get('/accountant/dashboard', [AcctDashboardController::class, 'index']);
 
 });
 
