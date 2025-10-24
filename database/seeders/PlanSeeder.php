@@ -23,8 +23,8 @@ class PlanSeeder extends Seeder
                     'Basic support',
                     'Monthly billing',
                 ],
-                'stripe_plan_id' => 'price_1SF88XG2MCMdX4izKmTwu4Ts', // set when you create plan in Stripe
-                'paypal_plan_id' => null, // set when you create plan in PayPal
+                'stripe_plan_id' => 'price_1SLfZMG2MCMdX4izahmTgoin',
+                'paypal_plan_id' => null,
                 'is_active' => true,
             ],
             [
@@ -36,7 +36,7 @@ class PlanSeeder extends Seeder
                     'Priority support',
                     'Monthly billing',
                 ],
-                'stripe_plan_id' => null,
+                'stripe_plan_id' => 'price_1SF88yG2MCMdX4izW2ah1vwe',
                 'paypal_plan_id' => null,
                 'is_active' => true,
             ],
@@ -49,7 +49,7 @@ class PlanSeeder extends Seeder
                     'Dedicated account manager',
                     'Monthly billing',
                 ],
-                'stripe_plan_id' => null,
+                'stripe_plan_id' => 'price_1SF89NG2MCMdX4izxXF3Vixc',
                 'paypal_plan_id' => null,
                 'is_active' => true,
             ],

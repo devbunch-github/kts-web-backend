@@ -2,8 +2,8 @@
 
 namespace App\Repositories\Eloquent;
 
-use App\Repositories\Contracts\BeauticianRepositoryInterface;
 use App\Models\Beautician;
+use App\Repositories\Contracts\BeauticianRepositoryInterface;
 
 class BeauticianRepository implements BeauticianRepositoryInterface
 {
@@ -16,11 +16,29 @@ class BeauticianRepository implements BeauticianRepositoryInterface
         }
 
         if (isset($filters['service'])) {
-            $query->whereHas('services', function ($q) use ($filters) {
-                $q->where('name', $filters['service']);
-            });
+            $query->whereJsonContains('services', $filters['service']);
         }
 
-        return $query->paginate(10);
+        return $query->latest()->paginate(10);
+    }
+
+    public function findByAccount(int $accountId)
+    {
+        return Beautician::where('account_id', $accountId)->first();
+    }
+
+    public function createForAccount(int $accountId, int $userId, array $data)
+    {
+        return Beautician::create([
+            'account_id' => $accountId,
+            'user_id'    => $userId,
+            'name'       => $data['name'],
+            'services'   => $data['services'] ?? null, // ✅ stored as array
+            'country'    => $data['country'] ?? null,
+            'city'       => $data['city'] ?? null,
+            'address'    => $data['address'] ?? null,
+            'logo'       => $data['logo'] ?? null,
+            'cover'      => $data['cover'] ?? null,
+        ]);
     }
 }

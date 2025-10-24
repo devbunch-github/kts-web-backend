@@ -24,7 +24,7 @@ class ServiceController extends Controller
 
         $userId = request()->header('X-User-Id') ?? request('user_id');
         if ($userId) {
-            $user = User::find($userId);
+        $user = User::find($userId);
             return $user?->bkUser?->account?->Id;
         }
         return null;

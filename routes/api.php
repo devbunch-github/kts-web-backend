@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\FileUploadController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\AppointmentController;
+use App\Http\Controllers\Api\Business\BusinessDashboardController;
 
 
 Route::get('/beauticians', [BeauticianController::class, 'index']);
@@ -89,6 +90,14 @@ Route::prefix('admin')->group(function () {
 
 
 Route::middleware('auth:sanctum')->group(function () {
+
+    Route::get('/beautician/check', [BeauticianController::class, 'check']);
+    Route::post('/beautician/setup', [BeauticianController::class, 'setup']);
+
+    Route::get('/business/dashboard/summary', [BusinessDashboardController::class, 'summary']);
+    Route::get('/business/dashboard/appointments', [BusinessDashboardController::class, 'appointments']);
+
+
 
     Route::post('/file-upload', [FileUploadController::class, 'store']);
 

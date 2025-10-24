@@ -4,23 +4,54 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Services\BeauticianService;
-use App\Http\Resources\BeauticianResource;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 
 class BeauticianController extends Controller
 {
-    protected $beauticianService;
+    public function __construct(protected BeauticianService $beauticianService) {}
 
-    public function __construct(BeauticianService $beauticianService)
-    {
-        $this->beauticianService = $beauticianService;
-    }
-
+    // Public listing
     public function index(Request $request)
     {
         $filters = $request->only(['category', 'service']);
         $beauticians = $this->beauticianService->getBeauticians($filters);
 
-        return BeauticianResource::collection($beauticians);
+        return response()->json([
+            'data' => $beauticians->items(),
+            'meta' => [
+                'current_page' => $beauticians->currentPage(),
+                'last_page' => $beauticians->lastPage(),
+            ],
+        ]);
+    }
+
+    // Check setup status
+    public function check()
+    {
+        $user = Auth::user();
+        $accountId = $user?->bkUser?->account?->Id;
+        if (!$accountId) return response()->json(['exists' => false]);
+
+        $exists = $this->beauticianService->checkAccountExists($accountId);
+        return response()->json(['exists' => $exists]);
+    }
+
+    // Setup
+    public function setup(Request $request)
+    {
+        $user = Auth::user();
+        $accountId = $user?->bkUser?->account?->Id;
+
+        if (!$accountId) {
+            return response()->json(['message' => 'No account found'], 404);
+        }
+
+        $beautician = $this->beauticianService->createBeautician($accountId, $user->id, $request);
+
+        return response()->json([
+            'message' => 'Business setup completed successfully!',
+            'data' => $beautician,
+        ]);
     }
 }
