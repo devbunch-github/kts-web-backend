@@ -127,14 +127,20 @@ class IncomeController extends Controller
 
     public function update(Request $request, int $id)
     {
+        $income = $this->incomes->find($id);
+        if (!$income) {
+            return response()->json(['message' => 'Income not found'], 404);
+        }
+
         $data = $request->all();
+
+        // 🧩 Preserve old customer if not supplied
+        if (!array_key_exists('CustomerId', $data) || empty($data['CustomerId'])) {
+            $data['CustomerId'] = $income->CustomerId;
+        }
 
         if (!empty($data['CustomerId']) && !is_numeric($data['CustomerId'])) {
             $data['CustomerName'] = $data['CustomerId'];
-            $data['CustomerId'] = null;
-        }
-
-        if (empty($data['CustomerId'])) {
             $data['CustomerId'] = null;
         }
 
@@ -151,24 +157,26 @@ class IncomeController extends Controller
             'RefundAmount'    => ['nullable', 'numeric'],
         ])->validate();
 
-        // ✅ Normalize PaymentDateTime format for SQL Server
+        // Normalize PaymentDateTime
         if (!empty($v['PaymentDateTime'])) {
             try {
                 $v['PaymentDateTime'] = \Carbon\Carbon::parse($v['PaymentDateTime'])->format('Y-m-d H:i:s');
             } catch (\Exception $e) {
-                return response()->json([
-                    'message' => 'Invalid date format for PaymentDateTime.'
-                ], 422);
+                return response()->json(['message' => 'Invalid date format for PaymentDateTime.'], 422);
             }
         }
 
-
+        // Update record
         $income = $this->incomes->update($id, array_merge($v, [
             'UpdatedBy' => Auth::id() ?? 0,
         ]));
 
-        return response()->json(['message' => 'Income updated', 'data' => $income]);
+        return response()->json([
+            'message' => 'Income updated successfully',
+            'data' => $income,
+        ]);
     }
+
 
     public function destroy(int $id)
     {
