@@ -130,8 +130,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
     Route::prefix('admin')->group(function () {
-        Route::apiResource('expenses', ExpenseController::class);
         Route::get('expenses/export/pdf', [ExpenseController::class, 'exportPdf']);
+        Route::post('expenses/upload', [ExpenseController::class, 'uploadFiles']);
+        Route::delete('expenses/file', [ExpenseController::class, 'deleteFile']);
+
+        Route::apiResource('expenses', ExpenseController::class);
+
 
         // Services CRUD
         Route::get('services/{id}', [ServiceController::class, 'show']);
