@@ -14,20 +14,27 @@ class ExpenseRepository implements ExpenseRepositoryInterface
     public function list($request)
     {
         $accountId = auth()->user()->bkUser->account->Id ?? null;
+
         $q = Expenses::query()
             ->with('category')
             ->where('AccountId', $accountId)
-            // ->where('parentId', 0)
             ->orderByDesc('Id');
 
+        // Filter only when user selects category
         if ($request->filled('category_id')) {
             $q->where('CategoryId', $request->category_id);
         }
 
+        // Apply date filter only if user explicitly selects both
         if ($request->filled('start_date') && $request->filled('end_date')) {
-            $q->whereBetween(DB::raw('DATE(PaidDateTime)'), [$request->start_date, $request->end_date]);
+            $start = Carbon::parse($request->start_date)->toDateString();
+            $end   = Carbon::parse($request->end_date)->toDateString();
+
+            $q->whereDate('PaidDateTime', '>=', $start)
+              ->whereDate('PaidDateTime', '<=', $end);
         }
 
+        // Apply search if present
         if ($request->filled('search')) {
             $term = $request->search;
             $q->where(function ($sub) use ($term) {

@@ -17,6 +17,7 @@ class ServiceStoreRequest extends FormRequest
             'DepositType' => ['nullable'],
             'Deposit' => ['nullable','numeric','min:0'],
             'DefaultAppointmentDuration' => ['required','integer','min:1'],
+            'DurationUnit' => ['required', 'in:mins,hours'],
             'Description' => ['nullable','string'],
             'FilePath' => ['nullable','string','max:255'],
             'ImagePath' => ['nullable','string','max:255'],
