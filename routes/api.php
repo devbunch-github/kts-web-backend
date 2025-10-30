@@ -26,7 +26,7 @@ use App\Http\Controllers\Api\AppointmentController;
 use App\Http\Controllers\Api\Business\BusinessDashboardController;
 use App\Http\Controllers\Api\AccountantController;
 use App\Http\Controllers\Api\Accountant\Auth\LoginController;
-use App\Http\Controllers\Accountant\AcctDashboardController;
+use App\Http\Controllers\Api\Accountant\AcctDashboardController;
 
 
 Route::get('/beauticians', [BeauticianController::class, 'index']);
@@ -169,6 +169,19 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Accountant Dashboard
     Route::get('/accountant/dashboard', [AcctDashboardController::class, 'index']);
+
+    // Accountant Income
+    Route::get('/accountant/income', [AcctDashboardController::class, 'fetchAccountantIncome']);
+    Route::delete('/accountant/income/{id}', [AcctDashboardController::class, 'deleteIncome']);
+    Route::get('/accountant/income/{id}', [AcctDashboardController::class, 'fetchIncomeById']);
+    Route::put('/accountant/income/{id}', [AcctDashboardController::class, 'updateIncome']);
+
+    // Accontant Expense
+    Route::get('/accountant/expenses', [AcctDashboardController::class, 'fetchAccountantExpenses']);
+    Route::delete('/accountant/expenses/{id}', [AcctDashboardController::class, 'deleteExpense']);
+    Route::get('/accountant/categories', [AcctDashboardController::class, 'fetchExpenseCategories']);
+    Route::get('/accountant/expense/{id}', [AcctDashboardController::class, 'fetchExpenseById']);
+    Route::put('/accountant/expense/{id}', [AcctDashboardController::class, 'updateExpense']);
 
 });
 

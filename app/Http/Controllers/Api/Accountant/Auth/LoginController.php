@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+use App\Models\Accountant;
 
 class LoginController extends Controller
 {
@@ -25,6 +26,7 @@ class LoginController extends Controller
         ]);
 
         $user = User::where('email', $r->email)->first();
+        $accountant = Accountant::where('email', $user->email)->first();
 
         if (!$user || !Hash::check($r->password, $user->password)) {
             return response()->json([
@@ -62,6 +64,7 @@ class LoginController extends Controller
                 'id'          => $user->id,
                 'name'        => $user->name,
                 'email'       => $user->email,
+                'is_active'   => $accountant->is_active,
                 'role'        => $primaryRole,
                 'roles'       => $roles,
                 'permissions' => $permissions,
