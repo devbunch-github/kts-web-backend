@@ -106,6 +106,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
     Route::post('/file-upload', [FileUploadController::class, 'store']);
+    Route::delete('/file-upload', [FileUploadController::class, 'destroy']);
+
 
     Route::get('/income', [IncomeController::class, 'index']);
     Route::post('/income', [IncomeController::class, 'store']);

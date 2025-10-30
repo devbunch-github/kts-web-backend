@@ -18,6 +18,7 @@ class Service extends Model
         'DepositType',
         'Deposit',
         'DefaultAppointmentDuration',
+        'DurationUnit',
         'Description',
         'FilePath',
         'ImagePath',

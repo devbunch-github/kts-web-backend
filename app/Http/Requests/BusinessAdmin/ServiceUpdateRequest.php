@@ -17,6 +17,7 @@ class ServiceUpdateRequest extends FormRequest
             'DepositType' => ['sometimes','nullable'],
             'Deposit' => ['sometimes','nullable','numeric','min:0'],
             'DefaultAppointmentDuration' => ['sometimes','required','integer','min:1'],
+            'DurationUnit' => ['sometimes', 'nullable', 'in:mins,hours'],
             'Description' => ['sometimes','nullable','string'],
             'FilePath' => ['sometimes','nullable','string','max:255'],
             'ImagePath' => ['sometimes','nullable','string','max:255'],

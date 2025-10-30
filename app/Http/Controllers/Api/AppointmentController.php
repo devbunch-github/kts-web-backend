@@ -107,7 +107,7 @@ class AppointmentController extends Controller
                 'CustomerId'    => 'required|integer|exists:Customers,Id',
                 'ServiceId'     => 'required|integer|exists:Services,Id',
                 'StartDateTime' => 'required|date',
-                'EndDateTime'   => 'nullable|date|after:StartDateTime',
+                'EndDateTime'   => 'nullable|date',
                 'Cost'          => 'required|numeric|min:0',
                 'Deposit'       => 'nullable|numeric|min:0',
                 'Tip'           => 'nullable|numeric|min:0',

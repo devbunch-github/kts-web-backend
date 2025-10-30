@@ -6,6 +6,8 @@ use App\Models\Appointment;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Exception;
+use Carbon\Carbon;
+use App\Models\Service;
 
 class AppointmentRepository
 {
@@ -57,6 +59,7 @@ class AppointmentRepository
             $data['CreatedById'] = $createdById;
             $data['DateCreated'] = now();
 
+            // 🔹 Map Status
             $statusMap = [
                 'Unpaid' => 0,
                 'Paid' => 1,
@@ -69,8 +72,34 @@ class AppointmentRepository
                 $data['Status'] = $statusMap[$data['Status']] ?? 0;
             }
 
+            // 🔹 Auto-calculate EndDateTime from Service duration
+            if (!empty($data['ServiceId']) && !empty($data['StartDateTime'])) {
+                $service = Service::find($data['ServiceId']);
+                if ($service && $service->DefaultAppointmentDuration) {
+                    $start = Carbon::parse($data['StartDateTime']);
+                    $duration = (int) $service->DefaultAppointmentDuration;
+                    $unit = strtolower($service->DurationUnit ?? 'minutes');
+
+                    switch ($unit) {
+                        case 'hour':
+                        case 'hours':
+                            $end = $start->copy()->addHours($duration);
+                            break;
+                        case 'day':
+                        case 'days':
+                            $end = $start->copy()->addDays($duration);
+                            break;
+                        default:
+                            // default is minutes
+                            $end = $start->copy()->addMinutes($duration);
+                    }
+
+                    $data['EndDateTime'] = $end;
+                }
+            }
 
             return Appointment::create($data);
+
         } catch (Exception $e) {
             Log::error('AppointmentRepository@createForAccount: ' . $e->getMessage());
             throw new Exception('Failed to create appointment.');
@@ -87,6 +116,7 @@ class AppointmentRepository
             $data['ModifiedById'] = $modifiedById;
             $data['DateModified'] = now();
 
+            // 🔹 Normalize Status
             $statusMap = [
                 'Unpaid' => 0,
                 'Paid' => 1,
@@ -99,12 +129,45 @@ class AppointmentRepository
                 $data['Status'] = $statusMap[$data['Status']] ?? 0;
             }
 
+            // 🔹 Recalculate EndDateTime if StartDateTime or ServiceId changed
+            if (!empty($data['StartDateTime']) || !empty($data['ServiceId'])) {
+                $serviceId = $data['ServiceId'] ?? $appointment->ServiceId;
+                $startTime = $data['StartDateTime'] ?? $appointment->StartDateTime;
+
+                $service = Service::find($serviceId);
+
+                if ($service) {
+                    $duration = (int) ($service->DefaultAppointmentDuration ?? 0);
+                    $unit = strtolower($service->DurationUnit ?? 'minutes');
+
+                    $start = Carbon::parse($startTime);
+
+                    switch ($unit) {
+                        case 'hours':
+                        case 'hour':
+                            $end = $start->copy()->addHours($duration);
+                            break;
+                        case 'days':
+                        case 'day':
+                            $end = $start->copy()->addDays($duration);
+                            break;
+                        default:
+                            $end = $start->copy()->addMinutes($duration);
+                            break;
+                    }
+
+                    $data['EndDateTime'] = $end;
+                }
+            }
+
+            // 🔹 Perform update
             $appointment->update($data);
+
             return $appointment->refresh();
 
-        } catch (Exception $e) {
-            Log::error("AppointmentRepository@updateForAccount($id): " . $e->getMessage());
-            throw new Exception('Failed to update appointment.');
+        } catch (\Exception $e) {
+            \Log::error("AppointmentRepository@updateForAccount($id): " . $e->getMessage());
+            throw new \Exception('Failed to update appointment.');
         }
     }
 

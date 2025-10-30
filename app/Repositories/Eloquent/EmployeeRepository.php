@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Exception;
 use Carbon\Carbon;
 use App\Models\EmployeeSchedule;
+use App\Models\Appointment;
 
 class EmployeeRepository implements EmployeeContract
 {
@@ -189,18 +190,42 @@ class EmployeeRepository implements EmployeeContract
         $start = Carbon::create($year, $month)->startOfMonth();
         $end = $start->copy()->endOfMonth();
 
-        return EmployeeTimeOff::where('employee_id', $employeeId)
+        $timeOffs = EmployeeTimeOff::where('employee_id', $employeeId)
             ->whereBetween('date', [$start, $end])
             ->get()
             ->map(fn($t) => [
-                'id' => $t->id,
+                'id' => "off-{$t->id}",
                 'title' => 'Time Off',
                 'date' => $t->date,
                 'start_time' => $t->start_time,
                 'end_time' => $t->end_time,
                 'subtitle' => $t->note,
+                'is_repeat' => $t->is_repeat,
+                'repeat_until' => $t->repeat_until,
+                'type' => 'off',
             ]);
+
+        $appointments = Appointment::where('EmployeeId', $employeeId)
+            ->whereBetween('StartDateTime', [$start, $end])
+            ->get()
+            ->map(fn($a) => [
+                'id' => "app-{$a->Id}",
+                'title' => optional($a->service)->Name ?? 'Appointment',
+                'date' => $a->StartDateTime->toDateString(),
+                'start_time' => $a->StartDateTime->format('H:i'),
+                'end_time' => $a->EndDateTime->format('H:i'),
+                'subtitle' => optional($a->customer)->FirstName ?? '',
+                'type' => 'appointment',
+            ]);
+
+        // ✅ FIX: wrap both in collect() before merge
+        return collect($timeOffs)
+            ->merge(collect($appointments))
+            ->sortBy('date')
+            ->values();
     }
+
+
 
     public function listSchedules($employeeId, $weekStart)
     {
