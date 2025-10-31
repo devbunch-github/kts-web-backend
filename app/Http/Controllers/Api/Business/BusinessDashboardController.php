@@ -15,7 +15,7 @@ class BusinessDashboardController extends Controller
         $accId = $this->accountId();
         return response()->json([
             'success' => true,
-            'data' => $this->service->getMonthlySummary($accId),
+            'data' => $this->service->getAccountingOverview($request, $accId),
         ]);
     }
 
