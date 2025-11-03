@@ -22,11 +22,14 @@ use App\Http\Controllers\Api\ExpenseController;
 use App\Http\Controllers\Api\FileUploadController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\EmployeeController;
-use App\Http\Controllers\Api\AppointmentController;
+use App\Http\Controllers\Api\Business\AppointmentController;
 use App\Http\Controllers\Api\Business\BusinessDashboardController;
 use App\Http\Controllers\Api\AccountantController;
 use App\Http\Controllers\Api\Accountant\Auth\LoginController;
 use App\Http\Controllers\Api\Accountant\AcctDashboardController;
+use App\Http\Controllers\Api\Business\PromoCodeController;
+use App\Http\Controllers\Api\Business\GiftCardController;
+use App\Http\Controllers\Api\Business\EmailMessageController;
 
 
 Route::get('/beauticians', [BeauticianController::class, 'index']);
@@ -130,6 +133,16 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::apiResource('appointments', AppointmentController::class);
 
+    Route::apiResource('promo-codes', PromoCodeController::class);
+    Route::get('gift-cards', [GiftCardController::class, 'index']);
+    Route::post('gift-cards', [GiftCardController::class, 'store']);
+    Route::get('gift-cards/{id}', [GiftCardController::class, 'show']);
+    Route::put('gift-cards/{id}', [GiftCardController::class, 'update']);
+    Route::delete('gift-cards/{id}', [GiftCardController::class, 'destroy']);
+
+    Route::get('email-messages', [EmailMessageController::class, 'index']);
+    Route::get('email-messages/{id}', [EmailMessageController::class, 'show']);
+    Route::put('email-messages/{id}', [EmailMessageController::class, 'update']);
 
     Route::prefix('admin')->group(function () {
         Route::get('expenses/export/pdf', [ExpenseController::class, 'exportPdf']);

@@ -8,6 +8,10 @@ use Illuminate\Support\Facades\Log;
 use Exception;
 use Carbon\Carbon;
 use App\Models\Service;
+use App\Models\Customer;
+use App\Models\Account;
+use App\Models\AccountingPeriod;
+use Illuminate\Support\Facades\DB;
 
 class AppointmentRepository
 {
@@ -98,7 +102,34 @@ class AppointmentRepository
                 }
             }
 
-            return Appointment::create($data);
+            // 🔹 Create Appointment
+            $appointment = Appointment::create($data);
+
+            // 🔹 Auto-create Income only if appointment is paid or has amount
+            if (!empty($appointment)) {
+                $service  = Service::find($appointment->ServiceId);
+                $customer = Customer::find($appointment->CustomerId);
+                $account  = Account::find($appointment->AccountId);
+
+                // Try to get active accounting period if available
+                $accountPeriod = AccountingPeriod::where('AccountId', $account->Id)->first();
+
+                DB::table('Income')->insert([
+                    'AccountId'           => $account->Id,
+                    'AccountingPeriodId'  => $accountPeriod?->Id,
+                    'AppointmentId'       => $appointment->Id,
+                    'Amount'              => $data['Cost'],
+                    'PaymentMethod'       => isset($data['PaymentMethod'])
+                                                ? ($data['PaymentMethod'] == 'Cash' ? 0 : 1)
+                                                : 0,
+                    'PaymentDateTime'     => $appointment->StartDateTime,
+                    'Description'         => trim(($customer->Name ?? '') . ' - ' . ($service->Name ?? '')),
+                    'DateCreated'         => now(),
+                    'CreatedById'         => $createdById,
+                ]);
+            }
+
+            return $appointment;
 
         } catch (Exception $e) {
             Log::error('AppointmentRepository@createForAccount: ' . $e->getMessage());
@@ -160,16 +191,51 @@ class AppointmentRepository
                 }
             }
 
-            // 🔹 Perform update
+            // 🔹 Perform Appointment Update
             $appointment->update($data);
+            $appointment->refresh();
 
-            return $appointment->refresh();
+            // 🔹 Sync Income record
+            $service  = Service::find($appointment->ServiceId);
+            $customer = Customer::find($appointment->CustomerId);
+            $account  = Account::find($appointment->AccountId);
+            $accountPeriod = AccountingPeriod::where('AccountId', $account->Id)->first();
 
-        } catch (\Exception $e) {
-            \Log::error("AppointmentRepository@updateForAccount($id): " . $e->getMessage());
-            throw new \Exception('Failed to update appointment.');
+            // Try to find existing Income
+            $existingIncome = DB::table('Income')->where('AppointmentId', $appointment->Id)->first();
+
+            $incomeData = [
+                'AccountId'           => $account->Id,
+                'AccountingPeriodId'  => $accountPeriod?->Id,
+                'AppointmentId'       => $appointment->Id,
+                'Amount'              => $data['Cost'] ?? $appointment->Cost,
+                'PaymentMethod'       => isset($data['PaymentMethod'])
+                                            ? ($data['PaymentMethod'] == 'Cash' ? 0 : 1)
+                                            : 0,
+                'PaymentDateTime'     => $appointment->StartDateTime,
+                'Description'         => trim(($customer->Name ?? '') . ' - ' . ($service->Name ?? '')),
+                'DateModified'        => now(),
+                'ModifiedById'        => $modifiedById,
+            ];
+
+            if ($existingIncome) {
+                // 🔹 Update existing income record
+                DB::table('Income')->where('Id', $existingIncome->Id)->update($incomeData);
+            } else {
+                // 🔹 Create new income if not exists
+                $incomeData['DateCreated'] = now();
+                $incomeData['CreatedById'] = $modifiedById;
+                DB::table('Income')->insert($incomeData);
+            }
+
+            return $appointment;
+
+        } catch (Exception $e) {
+            Log::error("AppointmentRepository@updateForAccount($id): " . $e->getMessage());
+            throw new Exception('Failed to update appointment.');
         }
     }
+
 
 
     public function softDeleteByAccount(int $accountId, int $id)
