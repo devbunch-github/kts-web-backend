@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\Business;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\UpdateAccountEmailTemplateRequest;
+use App\Http\Requests\BusinessAdmin\UpdateAccountEmailTemplateRequest;
 use App\Http\Resources\AccountEmailTemplateResource;
 use App\Services\AccountEmailTemplateService;
 use Exception;
