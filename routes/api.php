@@ -30,6 +30,8 @@ use App\Http\Controllers\Api\Accountant\AcctDashboardController;
 use App\Http\Controllers\Api\Business\PromoCodeController;
 use App\Http\Controllers\Api\Business\GiftCardController;
 use App\Http\Controllers\Api\Business\EmailMessageController;
+use App\Http\Controllers\Api\Business\LoyaltyCardController;
+use App\Http\Controllers\Api\Business\LoyaltyProgramController;
 
 
 Route::get('/beauticians', [BeauticianController::class, 'index']);
@@ -143,6 +145,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('email-messages', [EmailMessageController::class, 'index']);
     Route::get('email-messages/{id}', [EmailMessageController::class, 'show']);
     Route::put('email-messages/{id}', [EmailMessageController::class, 'update']);
+
+    Route::prefix('loyalty-card')->group(function () {
+        Route::get('/', [LoyaltyCardController::class, 'show']);
+        Route::post('/', [LoyaltyCardController::class, 'save']);
+    });
+
+    Route::prefix('loyalty-program')->group(function () {
+        Route::get('/', [LoyaltyProgramController::class, 'show']);
+        Route::post('/', [LoyaltyProgramController::class, 'save']);
+        Route::get('/summary', [LoyaltyProgramController::class, 'summary']);
+    });
 
     Route::prefix('admin')->group(function () {
         Route::get('expenses/export/pdf', [ExpenseController::class, 'exportPdf']);
