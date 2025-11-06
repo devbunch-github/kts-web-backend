@@ -5,14 +5,14 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use App\Repositories\Contracts\BeauticianRepositoryInterface;
 use App\Repositories\Eloquent\BeauticianRepository;
-use App\Repositories\Contracts\{AccountEmailTemplateRepositoryInterface, GiftCardRepositoryInterface, PromoCodeRepositoryInterface, PlanRepositoryInterface, ContactRepositoryInterface, CustomerRepositoryInterface, AppointmentRepositoryInterface};
-use App\Repositories\Eloquent\{AccountEmailTemplateRepository, GiftCardRepository, PromoCodeRepository, PlanRepository, ContactRepository, CustomerRepository, AppointmentRepository};
+use App\Repositories\Contracts\{TimeOffRepositoryInterface, RotaRepositoryInterface, BusinessSettingRepositoryInterface, AccountEmailTemplateRepositoryInterface, GiftCardRepositoryInterface, PromoCodeRepositoryInterface, PlanRepositoryInterface, ContactRepositoryInterface, CustomerRepositoryInterface, AppointmentRepositoryInterface};
+use App\Repositories\Eloquent\{TimeOffRepository, RotaRepository, BusinessSettingRepository, AccountEmailTemplateRepository, GiftCardRepository, PromoCodeRepository, PlanRepository, ContactRepository, CustomerRepository, AppointmentRepository};
 use App\Repositories\Contracts\ExpenseRepositoryInterface;
 use App\Repositories\Eloquent\ExpenseRepository;
 use App\Models\Account;
 use App\Observers\AccountObserver;
-use App\Repositories\Contracts\{LoyaltyCardRepository,LoyaltyProgramRepository};
-use App\Repositories\Eloquent\{LoyaltyCardEloquent,LoyaltyProgramEloquent};
+use App\Repositories\Contracts\{LoyaltyCardRepository, LoyaltyProgramRepository};
+use App\Repositories\Eloquent\{LoyaltyCardEloquent, LoyaltyProgramEloquent};
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -34,6 +34,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(AccountEmailTemplateRepositoryInterface::class, AccountEmailTemplateRepository::class);
         $this->app->bind(LoyaltyCardRepository::class, LoyaltyCardEloquent::class);
         $this->app->bind(LoyaltyProgramRepository::class, LoyaltyProgramEloquent::class);
+        $this->app->bind(BusinessSettingRepositoryInterface::class, BusinessSettingRepository::class);
+        $this->app->bind(RotaRepositoryInterface::class, RotaRepository::class);
+        $this->app->bind(TimeOffRepositoryInterface::class, TimeOffRepository::class);
 
     }
 

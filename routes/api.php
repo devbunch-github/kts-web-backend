@@ -32,6 +32,8 @@ use App\Http\Controllers\Api\Business\GiftCardController;
 use App\Http\Controllers\Api\Business\EmailMessageController;
 use App\Http\Controllers\Api\Business\LoyaltyCardController;
 use App\Http\Controllers\Api\Business\LoyaltyProgramController;
+use App\Http\Controllers\Api\Business\BusinessSettingController;
+use App\Http\Controllers\Api\Business\{RotaController,TimeOffController};
 
 
 Route::get('/beauticians', [BeauticianController::class, 'index']);
@@ -238,3 +240,22 @@ Route::delete('/admin/plans/{id}', [PlanController::class, 'destroy']);
 
 Route::get('/admin/subscriptions', [SubscriptionController::class, 'getSubscriptions']);
 Route::post('/admin/subscriptions/{id}/cancel', [SubscriptionController::class, 'cancel']);
+
+//business settings
+Route::middleware('auth:sanctum')
+    ->prefix('business/settings')
+    ->group(function () {
+        Route::get('{type}', [BusinessSettingController::class, 'show']);
+        Route::post('{type}', [BusinessSettingController::class, 'update']); // accepts multipart for 'site'
+    });
+
+//business rota and time off
+Route::middleware(['auth:sanctum'])->prefix('business')->group(function () {
+    Route::get('/rota',[RotaController::class,'index']);
+    Route::post('/rota/store',[RotaController::class,'store']);
+    Route::delete('/rota',[RotaController::class,'destroy']);
+
+    Route::get('/time-off',[TimeOffController::class,'index']);
+    Route::post('/time-off/store',[TimeOffController::class,'store']);
+    Route::delete('/time-off',[TimeOffController::class,'destroy']);
+});
