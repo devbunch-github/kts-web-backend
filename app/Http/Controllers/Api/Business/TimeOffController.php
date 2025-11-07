@@ -9,6 +9,7 @@ use App\Repositories\Contracts\TimeOffRepositoryInterface;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Exception;
+use App\Models\EmployeeTimeOff;
 
 class TimeOffController extends Controller
 {
@@ -41,9 +42,44 @@ class TimeOffController extends Controller
         return response()->json(['success'=>true,'recurrence_id'=>$id]);
     }
 
-    public function destroy(Request $r) {
-        $r->validate(['recurrence_id'=>'required|uuid']);
-        $deleted = $this->offs->deleteByRecurrence($this->currentAccountId(),$r->recurrence_id);
-        return response()->json(['success'=>true,'deleted'=>$deleted]);
+    public function update(Request $r, $id)
+    {
+        $r->validate([
+            'start_time' => 'required|date_format:H:i',
+            'end_time'   => 'required|date_format:H:i',
+            'note'       => 'nullable|string',
+        ]);
+
+        $off = EmployeeTimeOff::where('AccountId', $this->currentAccountId())
+            ->findOrFail($id);
+
+        $off->update([
+            'start_time' => $r->start_time,
+            'end_time'   => $r->end_time,
+            'note'       => $r->note,
+        ]);
+
+        return response()->json(['success' => true, 'data' => $off]);
     }
+
+    public function destroy(Request $r)
+    {
+        $r->validate([
+            'id' => 'nullable|integer',
+            'recurrence_id' => 'nullable|uuid',
+        ]);
+
+        $query = $this->offs->queryForAccount($this->currentAccountId());
+
+        if ($r->filled('id')) {
+            $deleted = $query->where('id', $r->id)->delete();
+        } elseif ($r->filled('recurrence_id')) {
+            $deleted = $query->where('recurrence_id', $r->recurrence_id)->delete();
+        } else {
+            return response()->json(['success' => false, 'message' => 'No identifier provided.'], 422);
+        }
+
+        return response()->json(['success' => true, 'deleted' => $deleted]);
+    }
+
 }

@@ -19,6 +19,12 @@ class TimeOffRepository implements TimeOffRepositoryInterface
         EmployeeTimeOff::insert($rows);
     }
 
+    public function queryForAccount(int $accountId)
+    {
+        return EmployeeTimeOff::where('AccountId', $accountId);
+    }
+
+
     public function deleteByRecurrence(int $accountId, string $recurrenceId): int {
         return EmployeeTimeOff::where('AccountId',$accountId)
             ->where('recurrence_id',$recurrenceId)->delete();

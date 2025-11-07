@@ -256,7 +256,9 @@ Route::middleware(['auth:sanctum'])->prefix('business')->group(function () {
     Route::delete('/rota',[RotaController::class,'destroy']);
     Route::put('/rota/{id}', [RotaController::class, 'update']);
 
-    Route::get('/time-off',[TimeOffController::class,'index']);
-    Route::post('/time-off/store',[TimeOffController::class,'store']);
-    Route::delete('/time-off',[TimeOffController::class,'destroy']);
+    Route::get('/time-off', [TimeOffController::class, 'index']);
+    Route::post('/time-off/store', [TimeOffController::class, 'store']);
+    Route::put('/time-off/{id}', [TimeOffController::class, 'update']);
+    Route::delete('/time-off', [TimeOffController::class, 'destroy']);
+
 });

@@ -27,25 +27,29 @@ class RotaService
         $enabled = collect($days)->where('enabled', true);
         $enabledDays = $enabled->pluck('day')->map(fn($d) => $map[$d])->toArray();
 
-        // 🧹 Delete existing overlapping shifts for same days
+        // 🧹 Delete overlapping shifts for selected days within the same range
         EmployeeRota::where('AccountId', $accountId)
             ->where('employee_id', $employeeId)
             ->whereBetween('shift_date', [$start, $end])
             ->where(function ($q) use ($enabledDays) {
                 foreach ($enabledDays as $dayNum) {
-                    $sqlDay = ($dayNum % 7) + 1; // convert ISO → SQL Server weekday
+                    $sqlDay = ($dayNum % 7) + 1; // ISO to SQL Server weekday
                     $q->orWhereRaw("DATEPART(WEEKDAY, shift_date) = ?", [$sqlDay]);
                 }
             })
             ->delete();
 
-        // 🧮 Recreate new shifts
+        // 🧮 Generate shifts
         $rows = [];
-        $week = 0;
+        $week = 1; // start counting from week 1
 
         foreach ($period as $d) {
-            if ($d->isMonday()) $week++;
-            if ($week % $interval !== 0) continue;
+            if ($d->isMonday() && $d->notEqualTo(Carbon::parse($start))) {
+                $week++; // increment at each Monday after start date
+            }
+
+            // Only include weeks matching the selected interval
+            if (($week - 1) % $interval !== 0) continue;
 
             $match = $enabled->first(fn($x) => $map[$x['day']] === $d->dayOfWeekIso);
             if (!$match) continue;
@@ -71,6 +75,7 @@ class RotaService
 
         return $recId;
     }
+
 
 
     public function createTimeOff($accountId, $employeeId, $date, $start, $end, $repeat, $until, $note, $userId) {
