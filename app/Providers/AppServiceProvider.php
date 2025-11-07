@@ -5,8 +5,8 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use App\Repositories\Contracts\BeauticianRepositoryInterface;
 use App\Repositories\Eloquent\BeauticianRepository;
-use App\Repositories\Contracts\{BusinessFormRepositoryInterface, TimeOffRepositoryInterface, RotaRepositoryInterface, BusinessSettingRepositoryInterface, AccountEmailTemplateRepositoryInterface, GiftCardRepositoryInterface, PromoCodeRepositoryInterface, PlanRepositoryInterface, ContactRepositoryInterface, CustomerRepositoryInterface, AppointmentRepositoryInterface};
-use App\Repositories\Eloquent\{BusinessFormRepository, TimeOffRepository, RotaRepository, BusinessSettingRepository, AccountEmailTemplateRepository, GiftCardRepository, PromoCodeRepository, PlanRepository, ContactRepository, CustomerRepository, AppointmentRepository};
+use App\Repositories\Contracts\{BusinessToDoRepositoryInterface, BusinessFormRepositoryInterface, TimeOffRepositoryInterface, RotaRepositoryInterface, BusinessSettingRepositoryInterface, AccountEmailTemplateRepositoryInterface, GiftCardRepositoryInterface, PromoCodeRepositoryInterface, PlanRepositoryInterface, ContactRepositoryInterface, CustomerRepositoryInterface, AppointmentRepositoryInterface};
+use App\Repositories\Eloquent\{BusinessToDoRepository, BusinessFormRepository, TimeOffRepository, RotaRepository, BusinessSettingRepository, AccountEmailTemplateRepository, GiftCardRepository, PromoCodeRepository, PlanRepository, ContactRepository, CustomerRepository, AppointmentRepository};
 use App\Repositories\Contracts\ExpenseRepositoryInterface;
 use App\Repositories\Eloquent\ExpenseRepository;
 use App\Models\Account;
@@ -38,6 +38,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(RotaRepositoryInterface::class, RotaRepository::class);
         $this->app->bind(TimeOffRepositoryInterface::class, TimeOffRepository::class);
         $this->app->bind(BusinessFormRepositoryInterface::class, BusinessFormRepository::class);
+        $this->app->bind(BusinessToDoRepositoryInterface::class, BusinessToDoRepository::class);
 
     }
 

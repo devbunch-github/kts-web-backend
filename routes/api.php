@@ -35,6 +35,7 @@ use App\Http\Controllers\Api\Business\LoyaltyProgramController;
 use App\Http\Controllers\Api\Business\BusinessSettingController;
 use App\Http\Controllers\Api\Business\{RotaController,TimeOffController};
 use App\Http\Controllers\Api\Business\BusinessFormController;
+use App\Http\Controllers\Api\Business\BusinessToDoController;
 
 
 Route::get('/beauticians', [BeauticianController::class, 'index']);
@@ -271,4 +272,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put   ('/forms/{id}',            [BusinessFormController::class,'update']);
     Route::delete('/forms/{id}',            [BusinessFormController::class,'destroy']);
     Route::patch ('/forms/{id}/toggle',     [BusinessFormController::class,'toggle']);
+});
+
+Route::middleware('auth:sanctum')->prefix('business/todo')->group(function () {
+    Route::get('/', [BusinessToDoController::class, 'index']);
+    Route::post('/', [BusinessToDoController::class, 'store']);
+    Route::put('{id}', [BusinessToDoController::class, 'update']);
+    Route::delete('{id}', [BusinessToDoController::class, 'destroy']);
+    Route::patch('{id}/toggle', [BusinessToDoController::class, 'toggle']);
 });
