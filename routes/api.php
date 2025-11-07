@@ -254,6 +254,7 @@ Route::middleware(['auth:sanctum'])->prefix('business')->group(function () {
     Route::get('/rota',[RotaController::class,'index']);
     Route::post('/rota/store',[RotaController::class,'store']);
     Route::delete('/rota',[RotaController::class,'destroy']);
+    Route::put('/rota/{id}', [RotaController::class, 'update']);
 
     Route::get('/time-off',[TimeOffController::class,'index']);
     Route::post('/time-off/store',[TimeOffController::class,'store']);

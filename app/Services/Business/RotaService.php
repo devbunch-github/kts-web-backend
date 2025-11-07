@@ -6,6 +6,8 @@ use App\Repositories\Contracts\{RotaRepositoryInterface, TimeOffRepositoryInterf
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use App\Models\EmployeeRota;
+use Illuminate\Support\Facades\DB;
 
 class RotaService
 {
@@ -14,28 +16,62 @@ class RotaService
         private TimeOffRepositoryInterface $offs
     ) {}
 
-    public function createRegularShifts($accountId, $employeeId, $start, $end, $interval, $days, $note, $userId) {
+    public function createRegularShifts($accountId, $employeeId, $start, $end, $interval, $days, $note, $userId)
+    {
         $recId = (string) Str::uuid();
-        $period = CarbonPeriod::create($start,$end);
-        $map = ['monday'=>1,'tuesday'=>2,'wednesday'=>3,'thursday'=>4,'friday'=>5,'saturday'=>6,'sunday'=>7];
-        $enabled = collect($days)->where('enabled',true);
+        $period = CarbonPeriod::create($start, $end);
+        $map = [
+            'monday' => 1, 'tuesday' => 2, 'wednesday' => 3,
+            'thursday' => 4, 'friday' => 5, 'saturday' => 6, 'sunday' => 7,
+        ];
+        $enabled = collect($days)->where('enabled', true);
+        $enabledDays = $enabled->pluck('day')->map(fn($d) => $map[$d])->toArray();
 
-        $rows=[]; $week=0;
+        // 🧹 Delete existing overlapping shifts for same days
+        EmployeeRota::where('AccountId', $accountId)
+            ->where('employee_id', $employeeId)
+            ->whereBetween('shift_date', [$start, $end])
+            ->where(function ($q) use ($enabledDays) {
+                foreach ($enabledDays as $dayNum) {
+                    $sqlDay = ($dayNum % 7) + 1; // convert ISO → SQL Server weekday
+                    $q->orWhereRaw("DATEPART(WEEKDAY, shift_date) = ?", [$sqlDay]);
+                }
+            })
+            ->delete();
+
+        // 🧮 Recreate new shifts
+        $rows = [];
+        $week = 0;
+
         foreach ($period as $d) {
             if ($d->isMonday()) $week++;
             if ($week % $interval !== 0) continue;
-            $match = $enabled->first(fn($x)=>$map[$x['day']] === $d->dayOfWeekIso);
+
+            $match = $enabled->first(fn($x) => $map[$x['day']] === $d->dayOfWeekIso);
             if (!$match) continue;
+
             $rows[] = [
-                'AccountId'=>$accountId,'employee_id'=>$employeeId,
-                'shift_date'=>$d->toDateString(),'start_time'=>$match['start_time'],'end_time'=>$match['end_time'],
-                'source'=>'regular','recurrence_id'=>$recId,'note'=>$note,
-                'created_by'=>$userId,'created_at'=>now(),'updated_at'=>now(),
+                'AccountId'     => $accountId,
+                'employee_id'   => $employeeId,
+                'shift_date'    => $d->toDateString(),
+                'start_time'    => $match['start_time'],
+                'end_time'      => $match['end_time'],
+                'source'        => 'regular',
+                'recurrence_id' => $recId,
+                'note'          => $note,
+                'created_by'    => $userId,
+                'created_at'    => now(),
+                'updated_at'    => now(),
             ];
         }
-        if ($rows) $this->rotas->createMany($rows);
+
+        if ($rows) {
+            $this->rotas->createMany($rows);
+        }
+
         return $recId;
     }
+
 
     public function createTimeOff($accountId, $employeeId, $date, $start, $end, $repeat, $until, $note, $userId) {
         $recId = (string) Str::uuid();

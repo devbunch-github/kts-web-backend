@@ -10,6 +10,7 @@ use App\Repositories\Contracts\RotaRepositoryInterface;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Exception;
+use App\Models\EmployeeRota;
 
 class RotaController extends Controller
 {
@@ -42,9 +43,57 @@ class RotaController extends Controller
         return response()->json(['success'=>true,'recurrence_id'=>$id]);
     }
 
-    public function destroy(Request $r) {
-        $r->validate(['recurrence_id'=>'required|uuid']);
-        $deleted = $this->rotas->deleteByRecurrence($this->currentAccountId(),$r->recurrence_id);
-        return response()->json(['success'=>true,'deleted'=>$deleted]);
+    public function update(Request $r, $id)
+    {
+        $r->validate([
+            'start_time' => 'required|date_format:H:i',
+            'end_time'   => 'required|date_format:H:i',
+            'note'       => 'nullable|string',
+        ]);
+
+        $shift = EmployeeRota::where('AccountId', $this->currentAccountId())
+            ->where('id', $id)
+            ->firstOrFail();
+
+        $shift->update([
+            'start_time' => $r->start_time,
+            'end_time'   => $r->end_time,
+            'note'       => $r->note,
+        ]);
+
+        return response()->json(['success' => true, 'data' => $shift]);
     }
+
+
+    public function destroy(Request $r)
+    {
+        $r->validate([
+            'id' => 'nullable|integer',
+            'recurrence_id' => 'nullable|uuid',
+        ]);
+
+        $accountId = $this->currentAccountId();
+        $deleted = 0;
+
+        if ($r->filled('id')) {
+            // 🟢 Delete only one shift
+            $deleted = EmployeeRota::where('AccountId', $accountId)
+                ->where('id', $r->id)
+                ->delete();
+        } elseif ($r->filled('recurrence_id')) {
+            // 🔁 Delete all in the same recurring series
+            $deleted = $this->rotas->deleteByRecurrence($accountId, $r->recurrence_id);
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Either id or recurrence_id must be provided.',
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'deleted' => $deleted,
+        ]);
+    }
+
 }
