@@ -132,4 +132,181 @@ class SubscriptionController extends Controller
         }
     }
 
+    public function myActive(Request $request)
+    {
+        $sub = Subscription::with('plan')
+            ->where('user_id', auth()->user()->id)
+            ->where('status', 'active')
+            ->latest()
+            ->first();
+
+        return response()->json(['data' => $sub]);
+    }
+
+    /**
+     * Upgrade (or change) the user’s current subscription plan.
+     * Cancels old subscription remotely (Stripe/PayPal) and locally,
+     * then creates a new checkout session for the selected plan.
+     */
+    public function upgrade(Request $request)
+    {
+        $request->validate([
+            'plan_id'  => 'required|exists:plans,id',
+            'user_id'  => 'required|exists:users,id',
+            'provider' => 'required|in:stripe,paypal',
+        ]);
+
+        $plan = Plan::findOrFail($request->plan_id);
+        $user = User::findOrFail($request->user_id);
+
+        // 🔹 STEP 1: Cancel any existing active subscription (remote + local)
+        $existingSubs = Subscription::where('user_id', $user->id)
+            ->whereIn('status', ['active', 'pending'])
+            ->get();
+
+        foreach ($existingSubs as $sub) {
+            try {
+                // ✅ Stripe cancellation (remote)
+                if ($sub->payment_provider === 'stripe' && $sub->payment_reference) {
+                    try {
+                        $stripe = new \Stripe\StripeClient(config('services.stripe.secret'));
+
+                        // Retrieve the checkout session to find its subscription
+                        if (str_starts_with($sub->payment_reference, 'cs_')) {
+                            $session = $stripe->checkout->sessions->retrieve($sub->payment_reference);
+
+                            if (!empty($session->subscription)) {
+                                // ✅ Cancel the actual subscription immediately
+                                $stripe->subscriptions->cancel($session->subscription);
+                            } else {
+                                \Log::warning("Stripe session {$sub->payment_reference} has no subscription attached.");
+                            }
+                        }
+
+                        // If the payment_reference itself is a sub_ ID (rare but possible)
+                        elseif (str_starts_with($sub->payment_reference, 'sub_')) {
+                            $stripe->subscriptions->cancel($sub->payment_reference);
+                        }
+
+                        // ✅ Mark local record as cancelled
+                        $sub->update(['status' => 'cancelled', 'ends_at' => now()]);
+
+                    } catch (\Throwable $e) {
+                        \Log::warning("Stripe cancel failed [{$sub->id}]: " . $e->getMessage());
+                    }
+                }
+
+
+
+                // ✅ PayPal cancellation (remote)
+                if ($sub->payment_provider === 'paypal' && $sub->payment_reference) {
+                    $paypal = new \GuzzleHttp\Client(['base_uri' => 'https://api-m.sandbox.paypal.com/']);
+                    $paypalToken = json_decode($paypal->post('v1/oauth2/token', [
+                        'auth'        => [config('services.paypal.client_id'), config('services.paypal.secret')],
+                        'form_params' => ['grant_type' => 'client_credentials'],
+                    ])->getBody(), true)['access_token'];
+
+                    $paypal->post("v1/billing/subscriptions/{$sub->payment_reference}/cancel", [
+                        'headers' => [
+                            'Authorization' => "Bearer $paypalToken",
+                            'Content-Type'  => 'application/json',
+                        ],
+                        'json' => ['reason' => 'User upgraded or changed plan.'],
+                    ]);
+                }
+
+                // ✅ Mark local record as cancelled
+                $sub->update(['status' => 'cancelled', 'ends_at' => now()]);
+
+            } catch (\Throwable $e) {
+                \Log::warning("Subscription cancel failed [{$sub->id}]: " . $e->getMessage());
+            }
+        }
+
+        // 🔹 STEP 2: Create new checkout for the selected provider
+        if ($request->provider === 'stripe') {
+            $session = $this->stripe->createSubscriptionSession($plan, $user);
+
+            $this->subs->create([
+                'user_id'          => $user->id,
+                'plan_id'          => $plan->id,
+                'status'           => 'pending',
+                'payment_provider' => 'stripe',
+                'payment_reference'=> $session->id,
+            ]);
+
+            return response()->json(['checkoutUrl' => $session->url]);
+        }
+
+        if ($request->provider === 'paypal') {
+            $res = $this->paypal->createSubscription($plan, $user);
+
+            $this->subs->create([
+                'user_id'          => $user->id,
+                'plan_id'          => $plan->id,
+                'status'           => 'pending',
+                'payment_provider' => 'paypal',
+                'payment_reference'=> $res['id'],
+            ]);
+
+            return response()->json(['approvalUrl' => $res['links'][0]['href']]);
+        }
+
+        return response()->json(['message' => 'Invalid provider'], 400);
+    }
+
+    public function cancelSubscription()
+    {
+        $user = auth()->user();
+        $sub = Subscription::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->latest()
+            ->first();
+
+        if (!$sub) {
+            return response()->json(['message' => 'No active subscription found.'], 404);
+        }
+
+        try {
+            if ($sub->payment_provider === 'stripe') {
+                $stripe = new \Stripe\StripeClient(config('services.stripe.secret'));
+                if (str_starts_with($sub->payment_reference, 'cs_')) {
+                    $session = $stripe->checkout->sessions->retrieve($sub->payment_reference);
+                    if (!empty($session->subscription)) {
+                        $stripe->subscriptions->cancel($session->subscription);
+                    }
+                } elseif (str_starts_with($sub->payment_reference, 'sub_')) {
+                    $stripe->subscriptions->cancel($sub->payment_reference);
+                }
+            }
+
+            if ($sub->payment_provider === 'paypal') {
+                $paypal = new \GuzzleHttp\Client(['base_uri' => 'https://api-m.sandbox.paypal.com/']);
+                $paypalToken = json_decode($paypal->post('v1/oauth2/token', [
+                    'auth'        => [config('services.paypal.client_id'), config('services.paypal.secret')],
+                    'form_params' => ['grant_type' => 'client_credentials'],
+                ])->getBody(), true)['access_token'];
+
+                $paypal->post("v1/billing/subscriptions/{$sub->payment_reference}/cancel", [
+                    'headers' => [
+                        'Authorization' => "Bearer $paypalToken",
+                        'Content-Type'  => 'application/json',
+                    ],
+                    'json' => ['reason' => 'User cancelled the subscription.'],
+                ]);
+            }
+
+            $sub->update(['status' => 'cancelled', 'ends_at' => now()]);
+
+            return response()->json(['message' => 'Subscription cancelled successfully.']);
+        } catch (\Throwable $e) {
+            \Log::warning('Subscription cancel failed: ' . $e->getMessage());
+            return response()->json(['message' => 'Cancellation failed.'], 500);
+        }
+    }
+
+
+
+
+
 }

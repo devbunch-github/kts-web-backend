@@ -35,6 +35,18 @@ class PayPalService
     {
         $token = $this->token();
 
+        // 🧭 Detect if user is already logged in (dashboard upgrade)
+        $redirectBase = env('FRONTEND_URL', 'http://localhost:5173');
+        $isBusinessUser = $user->hasRole('business_admin') || $user->hasRole('business');
+
+        $returnUrl = $isBusinessUser
+            ? "{$redirectBase}/dashboard/subscription?success=true"
+            : "{$redirectBase}/subscription/set-password?user_id={$user->id}";
+
+        $cancelUrl = $isBusinessUser
+            ? "{$redirectBase}/dashboard/subscription?cancelled=true"
+            : "{$redirectBase}/payment-cancelled?user_id={$user->id}";
+
         $res = $this->client->withHeaders([
             'Authorization' => "Bearer {$token}",
         ])->post("{$this->baseUrl}/v1/billing/subscriptions", [
@@ -43,8 +55,9 @@ class PayPalService
                 'brand_name' => config('app.name'),
                 'shipping_preference' => 'NO_SHIPPING',
                 'user_action' => 'SUBSCRIBE_NOW',
-                'return_url' => env('FRONTEND_URL', 'http://localhost:5173') . '/subscription/set-password?user_id=' . $user->id,
-                'cancel_url' => env('FRONTEND_URL', 'http://localhost:5173') . '/payment-cancelled?user_id=' . $user->id,
+                // ✅ Use dynamic return URLs based on user context
+                'return_url' => $returnUrl,
+                'cancel_url' => $cancelUrl,
             ],
             'subscriber' => [
                 'email_address' => $user->email,
@@ -57,6 +70,7 @@ class PayPalService
 
         return json_decode($res->body(), true);
     }
+
 
     public function cancelSubscription(string $subscriptionId)
     {

@@ -41,6 +41,8 @@ class PreRegisterOrchestrator
                 'AnnualEmploymentIncome' => 0,
                 'SubscriptionType' => false,
                 'AppStoreUserId' => false,
+                'DateCreated' => now(),
+                'CreatedById' => $user->id ?? null,
             ]);
 
             // 3) Initial Accounting Period (current month, since you’ll manage manually later)

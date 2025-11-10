@@ -20,6 +20,18 @@ class StripeService
 
     public function createSubscriptionSession(Plan $plan, User $user)
     {
+        $redirectBase = env('FRONTEND_URL');
+
+        // 🧭 Decide redirect target
+        $isBusinessUser = $user->hasRole('business_admin') || $user->hasRole('business');
+        $successUrl = $isBusinessUser
+            ? "{$redirectBase}/dashboard/subscription?success=true"
+            : "{$redirectBase}/subscription/set-password?user_id={$user->id}&session_id={CHECKOUT_SESSION_ID}";
+
+        $cancelUrl = $isBusinessUser
+            ? "{$redirectBase}/dashboard/subscription?cancelled=true"
+            : "{$redirectBase}/payment-cancelled?user_id={$user->id}";
+
         return $this->stripe->checkout->sessions->create([
             'mode' => 'subscription',
             'customer_email' => $user->email,
@@ -27,11 +39,25 @@ class StripeService
                 'price' => $plan->stripe_plan_id,
                 'quantity' => 1,
             ]],
-            'success_url' => env('FRONTEND_URL') . '/subscription/set-password?user_id=' . $user->id . '&session_id={CHECKOUT_SESSION_ID}',
-            'cancel_url'  => env('FRONTEND_URL') . '/payment-cancelled?user_id=' . $user->id,
+            'success_url' => $successUrl,
+            'cancel_url'  => $cancelUrl,
         ]);
-
     }
+
+    // public function createSubscriptionSession(Plan $plan, User $user)
+    // {
+    //     return $this->stripe->checkout->sessions->create([
+    //         'mode' => 'subscription',
+    //         'customer_email' => $user->email,
+    //         'line_items' => [[
+    //             'price' => $plan->stripe_plan_id,
+    //             'quantity' => 1,
+    //         ]],
+    //         'success_url' => env('FRONTEND_URL') . '/subscription/set-password?user_id=' . $user->id . '&session_id={CHECKOUT_SESSION_ID}',
+    //         'cancel_url'  => env('FRONTEND_URL') . '/payment-cancelled?user_id=' . $user->id,
+    //     ]);
+
+    // }
 
     public function cancelSubscription(string $reference)
     {

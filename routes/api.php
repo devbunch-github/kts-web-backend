@@ -36,6 +36,8 @@ use App\Http\Controllers\Api\Business\BusinessSettingController;
 use App\Http\Controllers\Api\Business\{RotaController,TimeOffController};
 use App\Http\Controllers\Api\Business\BusinessFormController;
 use App\Http\Controllers\Api\Business\BusinessToDoController;
+use App\Http\Controllers\Api\Business\NotificationController;
+use App\Http\Controllers\Api\Business\BusinessProfileController;
 
 
 Route::get('/beauticians', [BeauticianController::class, 'index']);
@@ -67,6 +69,16 @@ Route::post('/payment/confirm', [PaymentController::class, 'confirmPayment']);
     Route::post('/subscription/stripe',[SubscriptionController::class,'createStripe']);
     Route::post('/subscription/paypal',[SubscriptionController::class,'createPayPal']);
 // });
+
+Route::middleware('auth:sanctum')->group(function(){
+    Route::middleware('auth:sanctum')->get('/subscriptions', [SubscriptionController::class, 'myActive']);
+    Route::post('/subscription/upgrade', [SubscriptionController::class, 'upgrade']);
+    Route::post('/subscription/cancel', [SubscriptionController::class, 'cancelSubscription']);
+});
+
+Route::middleware('auth:sanctum')->get('/notifications', [NotificationController::class, 'index']);
+
+
 
 Route::post('/webhook/stripe',[WebhookController::class,'handleStripe']);
 Route::post('/webhook/paypal',[WebhookController::class,'handlePayPal']);
@@ -280,4 +292,9 @@ Route::middleware('auth:sanctum')->prefix('business/todo')->group(function () {
     Route::put('{id}', [BusinessToDoController::class, 'update']);
     Route::delete('{id}', [BusinessToDoController::class, 'destroy']);
     Route::patch('{id}/toggle', [BusinessToDoController::class, 'toggle']);
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/business/profile', [BusinessProfileController::class, 'show']);
+    Route::post('/business/profile', [BusinessProfileController::class, 'update']);
 });
