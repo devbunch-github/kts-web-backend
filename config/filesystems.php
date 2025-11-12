@@ -60,6 +60,13 @@ return [
             'report' => false,
         ],
 
+        'summary_csv' => [
+            'driver' => 'local',
+            'root' => public_path('exports/summary_csv'),
+            'url' => env('APP_URL') . '/exports/summary_csv',
+            'visibility' => 'public',
+        ],
+
     ],
 
     /*

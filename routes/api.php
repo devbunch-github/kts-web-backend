@@ -188,6 +188,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Accountant Dashboard
     Route::get('/accountant/dashboard', [AcctDashboardController::class, 'index']);
+    Route::get('/accountant/dashboard/summary', [AcctDashboardController::class, 'dbsummary']);
 
     // Accountant Income
     Route::get('/accountant/income', [AcctDashboardController::class, 'fetchAccountantIncome']);
@@ -201,6 +202,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/accountant/categories', [AcctDashboardController::class, 'fetchExpenseCategories']);
     Route::get('/accountant/expense/{id}', [AcctDashboardController::class, 'fetchExpenseById']);
     Route::put('/accountant/expense/{id}', [AcctDashboardController::class, 'updateExpense']);
+
+    //Summary Reports
+    Route::post('/accountant/summary/pdf', [AcctDashboardController::class, 'summary']);
+    Route::post('/accountant/summary/csv', [AcctDashboardController::class, 'summaryCSV']);
 
 });
 
