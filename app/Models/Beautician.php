@@ -22,6 +22,7 @@ class Beautician extends Model
         'category',
         'rating',
         'reviews_count',
+        'subdomain',
     ];
 
     protected $casts = [

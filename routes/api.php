@@ -38,6 +38,7 @@ use App\Http\Controllers\Api\Business\BusinessFormController;
 use App\Http\Controllers\Api\Business\BusinessToDoController;
 use App\Http\Controllers\Api\Business\NotificationController;
 use App\Http\Controllers\Api\Business\BusinessProfileController;
+use App\Http\Controllers\Api\Business\BusinessReportController;
 
 
 Route::get('/beauticians', [BeauticianController::class, 'index']);
@@ -124,7 +125,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/business/dashboard/summary', [BusinessDashboardController::class, 'summary']);
     Route::get('/business/dashboard/appointments', [BusinessDashboardController::class, 'appointments']);
 
-
+    //reports
+    Route::prefix('business/reports')->group(function () {
+        Route::get('/summary', [BusinessReportController::class, 'reportSummary']);
+        Route::get('/service', [BusinessReportController::class, 'serviceReport']);
+        Route::get('/client', [BusinessReportController::class, 'clientReport']);
+        Route::get('/appointment-completion', [BusinessReportController::class, 'appointmentCompletionReport']);
+        Route::get('/profit-loss', [BusinessReportController::class, 'profitLossReport']);
+        Route::get('/cancellation', [BusinessReportController::class, 'cancellationReport']);
+        Route::get('/income-sale', [BusinessReportController::class, 'incomeSaleReport']);
+        Route::get('/client-retention', [BusinessReportController::class, 'clientRetentionRate']);
+    });
+    
 
     Route::post('/file-upload', [FileUploadController::class, 'store']);
     Route::delete('/file-upload', [FileUploadController::class, 'destroy']);
@@ -231,6 +243,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/accountant/expense/{id}', [AcctDashboardController::class, 'fetchExpenseById']);
     Route::put('/accountant/expense/{id}', [AcctDashboardController::class, 'updateExpense']);
 
+});
+
+Route::prefix('business/reports')->group(function () {
+    Route::get('/export', [BusinessReportController::class, 'exportReport']);
 });
 
 // Subscription Packages

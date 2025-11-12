@@ -39,6 +39,7 @@ class BeauticianRepository implements BeauticianRepositoryInterface
             'address'    => $data['address'] ?? null,
             'logo'       => $data['logo'] ?? null,
             'cover'      => $data['cover'] ?? null,
+            'subdomain'  => $data['subdomain'] ?? null,
         ]);
     }
 }

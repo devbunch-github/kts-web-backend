@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Repositories\Contracts\BeauticianRepositoryInterface;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class BeauticianService
 {
@@ -29,6 +30,7 @@ class BeauticianService
     {
         $data = $request->validate([
             'name' => 'required|string|max:255',
+            'subdomain' => 'nullable|string|max:255',
             'services' => 'nullable|array',
             'services.*' => 'string|max:100',
             'country' => 'nullable|string|max:255',
@@ -46,6 +48,16 @@ class BeauticianService
             $data['cover'] = $request->file('cover')->store('beauticians/covers', 'public');
         }
 
+        // ✅ explicitly add user/account IDs
+        $data['account_id'] = $accountId;
+        $data['user_id'] = $userId;
+
+        // ✅ add subdomain manually if needed
+        if (empty($data['subdomain']) && !empty($data['name'])) {
+            $data['subdomain'] = Str::slug($data['name']) . '-' . uniqid();
+        }
+
         return $this->beauticianRepo->createForAccount($accountId, $userId, $data);
     }
+
 }
