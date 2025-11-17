@@ -20,7 +20,8 @@ class AuthService
         $hierarchy = [
             'super_admin',
             'accountant',
-            'business'
+            'business',
+            'customer',
         ];
 
         foreach ($hierarchy as $role) {
@@ -66,6 +67,7 @@ class AuthService
             'super_admin' => '/admin/dashboard',
             'accountant'  => '/accountant/dashboard',
             'business'    => '/dashboard',
+            'customer'    => '/client/dashboard',
         ];
 
         $redirectUrl = $redirects[$primaryRole] ?? '/dashboard';

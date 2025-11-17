@@ -48,6 +48,7 @@ class LoginController extends Controller
             'super_admin' => '/admin/dashboard',
             'accountant'  => '/accountant/dashboard',
             'business'    => '/business/dashboard',
+            'customer'    => '/client/dashboard',
         ];
 
         $redirectUrl = $redirects[$primaryRole] ?? '/dashboard';

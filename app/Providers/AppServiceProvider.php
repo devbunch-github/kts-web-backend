@@ -11,6 +11,8 @@ use App\Repositories\Contracts\ExpenseRepositoryInterface;
 use App\Repositories\Eloquent\ExpenseRepository;
 use App\Models\Account;
 use App\Observers\AccountObserver;
+use App\Repositories\Client\ClientRepository;
+use App\Repositories\Client\ClientRepositoryInterface;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -30,6 +32,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(PromoCodeRepositoryInterface::class, PromoCodeRepository::class);
         $this->app->bind(GiftCardRepositoryInterface::class, GiftCardRepository::class);
         $this->app->bind(AccountEmailTemplateRepositoryInterface::class, AccountEmailTemplateRepository::class);
+        $this->app->bind(ClientRepositoryInterface::class, ClientRepository::class);
 
     }
 

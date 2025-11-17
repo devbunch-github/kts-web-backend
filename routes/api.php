@@ -30,6 +30,7 @@ use App\Http\Controllers\Api\Accountant\AcctDashboardController;
 use App\Http\Controllers\Api\Business\PromoCodeController;
 use App\Http\Controllers\Api\Business\GiftCardController;
 use App\Http\Controllers\Api\Business\EmailMessageController;
+use App\Http\Controllers\Api\Client\ClientController;
 
 
 Route::get('/beauticians', [BeauticianController::class, 'index']);
@@ -230,3 +231,9 @@ Route::delete('/admin/plans/{id}', [PlanController::class, 'destroy']);
 
 Route::get('/admin/subscriptions', [SubscriptionController::class, 'getSubscriptions']);
 Route::post('/admin/subscriptions/{id}/cancel', [SubscriptionController::class, 'cancel']);
+
+
+// Client Routes
+Route::middleware(['auth:sanctum'])->prefix('client')->group(function () {
+    Route::get('/appointments', [ClientController::class, 'appointments']);
+});
