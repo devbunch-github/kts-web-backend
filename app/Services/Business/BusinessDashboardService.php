@@ -332,4 +332,74 @@ class BusinessDashboardService
             ];
         })->toArray();
     }
+
+    public function getBusinessReports(int $accountId, string $from, string $to): array
+    {
+        // -----------------------
+        // BASIC METRICS
+        // -----------------------
+        $totalRevenue = Income::where('AccountId', $accountId)
+            ->whereBetween('PaymentDateTime', [$from, $to])
+            ->sum('Amount');
+
+        $totalSales = $totalRevenue; // You can separate logic if Sales ≠ Income
+
+        $totalAppointments = Appointment::where('AccountId', $accountId)
+            ->whereBetween('StartDateTime', [$from, $to])
+            ->count();
+
+        $totalCustomers = Income::where('AccountId', $accountId)
+            ->whereBetween('PaymentDateTime', [$from, $to])
+            ->distinct('CustomerId')
+            ->count('CustomerId');
+
+        // -----------------------
+        // CHART: TOTAL SALES (LINE)
+        // -----------------------
+        $salesChart = Income::selectRaw('FORMAT(PaymentDateTime, \'yyyy-MM-dd\') as date, SUM(Amount) as total')
+            ->where('AccountId', $accountId)
+            ->whereBetween('PaymentDateTime', [$from, $to])
+            ->groupBy(DB::raw('FORMAT(PaymentDateTime, \'yyyy-MM-dd\')'))
+            ->orderBy('date')
+            ->get()
+            ->map(fn($r) => ['date' => $r->date, 'total' => (float)$r->total])
+            ->values();
+
+        // -----------------------
+        // CHART: TOTAL EXPENSES (BAR)
+        // -----------------------
+        $expenseChart = Expenses::selectRaw('ISNULL(Supplier, \'Other\') as category, SUM(Amount) as total')
+            ->where('AccountId', $accountId)
+            ->whereBetween('PaidDateTime', [$from, $to])
+            ->groupBy('Supplier')
+            ->orderByDesc(DB::raw('SUM(Amount)'))
+            ->get()
+            ->map(fn($r) => ['category' => $r->category, 'total' => (float)$r->total])
+            ->values();
+
+        // -----------------------
+        // CHART: SALE BY SERVICE (BAR)
+        // -----------------------
+        $serviceSales = Income::selectRaw('s.Name as service_name, SUM(i.Amount) as total')
+            ->from('Income as i')
+            ->join('Services as s', 's.Id', '=', 'i.ServiceId')
+            ->where('i.AccountId', $accountId)
+            ->whereBetween('i.PaymentDateTime', [$from, $to])
+            ->groupBy('s.Name')
+            ->orderByDesc(DB::raw('SUM(i.Amount)'))
+            ->get()
+            ->map(fn($r) => ['service_name' => $r->service_name, 'total' => (float)$r->total])
+            ->values();
+
+        return [
+            'total_revenue'      => (float)$totalRevenue,
+            'total_sales'        => (float)$totalSales,
+            'total_appointments' => (int)$totalAppointments,
+            'total_customers'    => (int)$totalCustomers,
+            'sales_chart'        => $salesChart,
+            'expenses_chart'     => $expenseChart,
+            'service_sales'      => $serviceSales,
+        ];
+    }
+
 }

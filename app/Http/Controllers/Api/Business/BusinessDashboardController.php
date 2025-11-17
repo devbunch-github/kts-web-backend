@@ -49,4 +49,5 @@ class BusinessDashboardController extends Controller
 
         return null;
     }
+
 }

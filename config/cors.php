@@ -5,7 +5,7 @@ return [
     'paths' => [
         'api/*',              // all API routes
         'api/accountant/*',   // explicitly allow accountant endpoints under /api
-        'sanctum/csrf-cookie',
+        'business/*', 'sanctum/csrf-cookie',
         'subscription/*',
         'accountant/*',
         'login',

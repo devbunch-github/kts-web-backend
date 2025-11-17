@@ -27,4 +27,13 @@ class GiftCardRepository implements GiftCardRepositoryInterface
             ->with('service')
             ->firstOrFail();
     }
+
+    public function listByAccount($accountId)
+    {
+        return $this->model
+            ->where('account_id', $accountId)
+            ->orderBy('id', 'DESC')
+            ->get();
+    }
+
 }

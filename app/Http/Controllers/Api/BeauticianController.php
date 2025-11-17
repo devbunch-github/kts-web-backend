@@ -14,7 +14,7 @@ class BeauticianController extends Controller
     // Public listing
     public function index(Request $request)
     {
-        $filters = $request->only(['category', 'service']);
+        $filters = $request->only(['category', 'service', 'account_id', 'subdomain']);
         $beauticians = $this->beauticianService->getBeauticians($filters);
 
         return response()->json([

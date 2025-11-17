@@ -10,11 +10,17 @@ class EmployeeTimeOff extends Model
     use HasFactory;
 
     protected $fillable = [
-        'employee_id', 'date', 'start_time', 'end_time', 'is_repeat', 'repeat_until', 'note',
+        'AccountId','employee_id','date','start_time','end_time',
+        'is_repeat','repeat_until','note','recurrence_id'
     ];
 
-    public function employee()
-    {
+    protected $casts = [
+        'date'=>'date',
+        'repeat_until'=>'date',
+        'is_repeat'=>'boolean'
+    ];
+
+    public function employee() {
         return $this->belongsTo(Employee::class);
     }
 }

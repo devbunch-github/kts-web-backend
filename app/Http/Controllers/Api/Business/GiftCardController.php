@@ -56,4 +56,12 @@ class GiftCardController extends Controller
         $this->service->destroy($accountId, $id);
         return response()->json(['success' => true], Response::HTTP_OK);
     }
+
+    public function publicList($accountId)
+    {
+        $repo = app(GiftCardRepositoryInterface::class);
+        $cards = $repo->listByAccount($accountId);
+        return GiftCardResource::collection($cards);
+    }
+
 }

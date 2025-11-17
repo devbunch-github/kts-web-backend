@@ -31,7 +31,15 @@ use App\Http\Controllers\Api\Business\PromoCodeController;
 use App\Http\Controllers\Api\Business\GiftCardController;
 use App\Http\Controllers\Api\Business\EmailMessageController;
 use App\Http\Controllers\Api\Client\ClientController;
-
+use App\Http\Controllers\Api\Business\LoyaltyCardController;
+use App\Http\Controllers\Api\Business\LoyaltyProgramController;
+use App\Http\Controllers\Api\Business\BusinessSettingController;
+use App\Http\Controllers\Api\Business\{RotaController,TimeOffController};
+use App\Http\Controllers\Api\Business\BusinessFormController;
+use App\Http\Controllers\Api\Business\BusinessToDoController;
+use App\Http\Controllers\Api\Business\NotificationController;
+use App\Http\Controllers\Api\Business\BusinessProfileController;
+use App\Http\Controllers\Api\Business\BusinessReportController;
 
 Route::get('/beauticians', [BeauticianController::class, 'index']);
 
@@ -52,6 +60,8 @@ Route::post('/auth/pre-register', [AuthController::class, 'preRegister']);
 Route::post('/auth/set-password', [AuthController::class, 'setPassword']);
 Route::post('/auth/check-email', [AuthController::class, 'checkEmail']);
 
+// Public business gift card listing
+Route::get('public/gift-cards/{accountId}', [GiftCardController::class, 'publicList']);
 
 Route::post('/payment/stripe/create-intent', [PaymentController::class, 'createStripeIntent']);
 Route::post('/payment/paypal/create-order', [PaymentController::class, 'createPayPalOrder']);
@@ -62,6 +72,16 @@ Route::post('/payment/confirm', [PaymentController::class, 'confirmPayment']);
     Route::post('/subscription/stripe',[SubscriptionController::class,'createStripe']);
     Route::post('/subscription/paypal',[SubscriptionController::class,'createPayPal']);
 // });
+
+Route::middleware('auth:sanctum')->group(function(){
+    Route::middleware('auth:sanctum')->get('/subscriptions', [SubscriptionController::class, 'myActive']);
+    Route::post('/subscription/upgrade', [SubscriptionController::class, 'upgrade']);
+    Route::post('/subscription/cancel', [SubscriptionController::class, 'cancelSubscription']);
+});
+
+Route::middleware('auth:sanctum')->get('/notifications', [NotificationController::class, 'index']);
+
+
 
 Route::post('/webhook/stripe',[WebhookController::class,'handleStripe']);
 Route::post('/webhook/paypal',[WebhookController::class,'handlePayPal']);
@@ -107,6 +127,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/business/dashboard/summary', [BusinessDashboardController::class, 'summary']);
     Route::get('/business/dashboard/appointments', [BusinessDashboardController::class, 'appointments']);
 
+    //reports
+    Route::prefix('business/reports')->group(function () {
+        Route::get('/summary', [BusinessReportController::class, 'reportSummary']);
+        Route::get('/service', [BusinessReportController::class, 'serviceReport']);
+        Route::get('/client', [BusinessReportController::class, 'clientReport']);
+        Route::get('/appointment-completion', [BusinessReportController::class, 'appointmentCompletionReport']);
+        Route::get('/profit-loss', [BusinessReportController::class, 'profitLossReport']);
+        Route::get('/cancellation', [BusinessReportController::class, 'cancellationReport']);
+        Route::get('/income-sale', [BusinessReportController::class, 'incomeSaleReport']);
+        Route::get('/client-retention', [BusinessReportController::class, 'clientRetentionRate']);
+    });
 
 
     Route::post('/file-upload', [FileUploadController::class, 'store']);
@@ -144,6 +175,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('email-messages', [EmailMessageController::class, 'index']);
     Route::get('email-messages/{id}', [EmailMessageController::class, 'show']);
     Route::put('email-messages/{id}', [EmailMessageController::class, 'update']);
+
+    Route::prefix('loyalty-card')->group(function () {
+        Route::get('/', [LoyaltyCardController::class, 'show']);
+        Route::post('/', [LoyaltyCardController::class, 'save']);
+    });
+
+    Route::prefix('loyalty-program')->group(function () {
+        Route::get('/', [LoyaltyProgramController::class, 'show']);
+        Route::post('/', [LoyaltyProgramController::class, 'save']);
+        Route::get('/summary', [LoyaltyProgramController::class, 'summary']);
+    });
 
     Route::prefix('admin')->group(function () {
         Route::get('expenses/export/pdf', [ExpenseController::class, 'exportPdf']);
@@ -210,30 +252,32 @@ Route::middleware('auth:sanctum')->group(function () {
 
 });
 
-// Subscription Packages
-Route::post('/admin/plans', [PlanController::class, 'store']);
-Route::get('/admin/plans', [PlanController::class, 'index']);
-Route::post('/admin/plans', [PlanController::class, 'store']);
-Route::get('/admin/plans/{id}', [PlanController::class, 'show']);
-Route::put('/admin/plans/{id}', [PlanController::class, 'update']);
-Route::delete('/admin/plans/{id}', [PlanController::class, 'destroy']);
-
-Route::get('/admin/subscriptions', [SubscriptionController::class, 'getSubscriptions']);
-Route::post('/admin/subscriptions/{id}/cancel', [SubscriptionController::class, 'cancel']);
-
-// Subscription Packages
-Route::post('/admin/plans', [PlanController::class, 'store']);
-Route::get('/admin/plans', [PlanController::class, 'index']);
-Route::post('/admin/plans', [PlanController::class, 'store']);
-Route::get('/admin/plans/{id}', [PlanController::class, 'show']);
-Route::put('/admin/plans/{id}', [PlanController::class, 'update']);
-Route::delete('/admin/plans/{id}', [PlanController::class, 'destroy']);
-
-Route::get('/admin/subscriptions', [SubscriptionController::class, 'getSubscriptions']);
-Route::post('/admin/subscriptions/{id}/cancel', [SubscriptionController::class, 'cancel']);
-
-
-// Client Routes
-Route::middleware(['auth:sanctum'])->prefix('client')->group(function () {
-    Route::get('/appointments', [ClientController::class, 'appointments']);
+Route::prefix('business/reports')->group(function () {
+    Route::get('/export', [BusinessReportController::class, 'exportReport']);
 });
+
+Route::prefix('business/reports')->group(function () {
+    Route::get('/export', [BusinessReportController::class, 'exportReport']);
+});
+
+// Subscription Packages
+Route::post('/admin/plans', [PlanController::class, 'store']);
+Route::get('/admin/plans', [PlanController::class, 'index']);
+Route::post('/admin/plans', [PlanController::class, 'store']);
+Route::get('/admin/plans/{id}', [PlanController::class, 'show']);
+Route::put('/admin/plans/{id}', [PlanController::class, 'update']);
+Route::delete('/admin/plans/{id}', [PlanController::class, 'destroy']);
+
+Route::get('/admin/subscriptions', [SubscriptionController::class, 'getSubscriptions']);
+Route::post('/admin/subscriptions/{id}/cancel', [SubscriptionController::class, 'cancel']);
+
+// Subscription Packages
+Route::post('/admin/plans', [PlanController::class, 'store']);
+Route::get('/admin/plans', [PlanController::class, 'index']);
+Route::post('/admin/plans', [PlanController::class, 'store']);
+Route::get('/admin/plans/{id}', [PlanController::class, 'show']);
+Route::put('/admin/plans/{id}', [PlanController::class, 'update']);
+Route::delete('/admin/plans/{id}', [PlanController::class, 'destroy']);
+
+Route::get('/admin/subscriptions', [SubscriptionController::class, 'getSubscriptions']);
+Route::post('/admin/subscriptions/{id}/cancel', [SubscriptionController::class, 'cancel']);

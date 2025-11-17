@@ -11,11 +11,21 @@ class BeauticianRepository implements BeauticianRepositoryInterface
     {
         $query = Beautician::query();
 
-        if (isset($filters['category'])) {
+        // 🔹 filter by account
+        if (!empty($filters['account_id'])) {
+            $query->where('account_id', $filters['account_id']);
+        }
+
+        // 🔹 future: subdomain based (octane.appt.live, etc.)
+        if (!empty($filters['subdomain'])) {
+            $query->where('subdomain', $filters['subdomain']);
+        }
+
+        if (!empty($filters['category'])) {
             $query->where('category', $filters['category']);
         }
 
-        if (isset($filters['service'])) {
+        if (!empty($filters['service'])) {
             $query->whereJsonContains('services', $filters['service']);
         }
 
@@ -39,6 +49,7 @@ class BeauticianRepository implements BeauticianRepositoryInterface
             'address'    => $data['address'] ?? null,
             'logo'       => $data['logo'] ?? null,
             'cover'      => $data['cover'] ?? null,
+            'subdomain'  => $data['subdomain'] ?? null,
         ]);
     }
 }

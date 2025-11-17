@@ -37,5 +37,5 @@ class Service extends Model
 
     public function account()  { return $this->belongsTo(Account::class,'AccountId','Id'); }
     public function category() { return $this->belongsTo(Category::class,'CategoryId','Id'); }
-    public function incomes()  { return $this->hasMany(Income::class,'ServiceId'); }
+    public function incomes()  { return $this->hasMany(Income::class,'ServiceId', 'Id'); }
 }
