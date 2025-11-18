@@ -8,6 +8,7 @@ class Appointment extends Model
 {
     protected $table = 'Appointments';
     protected $primaryKey = 'Id';
+    protected $dates = ['StartDateTime', 'EndDateTime'];
 
     protected $fillable = [
         'StartDateTime',

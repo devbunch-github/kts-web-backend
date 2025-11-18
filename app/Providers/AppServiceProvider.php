@@ -11,6 +11,8 @@ use App\Repositories\Contracts\ExpenseRepositoryInterface;
 use App\Repositories\Eloquent\ExpenseRepository;
 use App\Models\Account;
 use App\Observers\AccountObserver;
+use App\Repositories\Client\ClientRepository;
+use App\Repositories\Client\ClientRepositoryInterface;
 use App\Repositories\Contracts\{LoyaltyCardRepository, LoyaltyProgramRepository};
 use App\Repositories\Eloquent\{LoyaltyCardEloquent, LoyaltyProgramEloquent};
 
@@ -32,6 +34,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(PromoCodeRepositoryInterface::class, PromoCodeRepository::class);
         $this->app->bind(GiftCardRepositoryInterface::class, GiftCardRepository::class);
         $this->app->bind(AccountEmailTemplateRepositoryInterface::class, AccountEmailTemplateRepository::class);
+        $this->app->bind(ClientRepositoryInterface::class, ClientRepository::class);
         $this->app->bind(LoyaltyCardRepository::class, LoyaltyCardEloquent::class);
         $this->app->bind(LoyaltyProgramRepository::class, LoyaltyProgramEloquent::class);
         $this->app->bind(BusinessSettingRepositoryInterface::class, BusinessSettingRepository::class);

@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Expense extends Model
 {
+    use HasFactory;
+
     protected $connection = 'sqlsrv';
     protected $table = 'Expenses';
     public $timestamps = false;
@@ -31,5 +34,10 @@ class Expense extends Model
     public function account()
     {
         return $this->belongsTo(Account::class, 'AccountId', 'Id');
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class, 'CategoryId', 'Id');
     }
 }

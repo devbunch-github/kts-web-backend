@@ -10,6 +10,9 @@ use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\App;
 use App\Models\Plan;
 use App\Models\Subscription;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+
 
 class PlanController extends Controller {
     public function __construct(private PlanService $plans) {}
@@ -402,7 +405,7 @@ class PlanController extends Controller {
                             ]);
                         }
                     } catch (\Throwable $e) {
-                        \Log::warning("Stripe cancel failed for subscription {$sub->id}: " . $e->getMessage());
+                        Log::warning("Stripe cancel failed for subscription {$sub->id}: " . $e->getMessage());
                     }
                 }
 
@@ -423,7 +426,7 @@ class PlanController extends Controller {
                             'json' => ['reason' => 'Package deleted by Super Admin'],
                         ]);
                     } catch (\Throwable $e) {
-                        \Log::warning("PayPal cancel failed for subscription {$sub->id}: " . $e->getMessage());
+                        Log::warning("PayPal cancel failed for subscription {$sub->id}: " . $e->getMessage());
                     }
                 }
 
@@ -433,7 +436,7 @@ class PlanController extends Controller {
 
             // Remove foreign key link before deleting plan
             // (Set plan_id = NULL for all subscriptions using this plan)
-            \DB::table('subscriptions')->where('plan_id', $id)->update(['plan_id' => null]);
+            DB::table('subscriptions')->where('plan_id', $id)->update(['plan_id' => null]);
 
             // Delete the plan itself
             $plan->delete();
@@ -446,7 +449,7 @@ class PlanController extends Controller {
                 $productId = is_string($price->product) ? $price->product : $price->product->id;
                 \Stripe\Product::update($productId, ['active' => false]);
             } catch (\Throwable $e) {
-                \Log::warning('Stripe deactivate warning: ' . $e->getMessage());
+                Log::warning('Stripe deactivate warning: ' . $e->getMessage());
             }
 
             try {
@@ -460,7 +463,7 @@ class PlanController extends Controller {
                     'headers' => ['Authorization' => "Bearer $paypalToken"],
                 ]);
             } catch (\Throwable $e) {
-                \Log::warning('PayPal deactivate warning: ' . $e->getMessage());
+                Log::warning('PayPal deactivate warning: ' . $e->getMessage());
             }
 
             return response()->json([
@@ -469,7 +472,7 @@ class PlanController extends Controller {
             ], 200);
 
         } catch (\Throwable $e) {
-            \Log::error('Plan delete failed: ' . $e->getMessage());
+            Log::error('Plan delete failed: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Delete failed.',

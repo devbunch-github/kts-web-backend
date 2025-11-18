@@ -85,7 +85,7 @@ class SmsPackageController extends Controller
 
     public function getSmsPackages()
     {
-        $packages = SmsPackage::select('id', 'name', 'price', 'total_sms')->get();
+        $packages = SmsPackage::select('id', 'name', 'price', 'total_sms', 'description')->get();
 
         return response()->json([
             'success' => true,

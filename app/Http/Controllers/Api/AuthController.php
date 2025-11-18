@@ -50,12 +50,13 @@ class AuthController extends Controller {
 
         // Determine primary role for redirect (using hierarchy)
         $primaryRole = $this->auth->getPrimaryRole($roles);
-        
+
         // Define redirect URLs per role
         $redirects = [
             'super_admin' => '/admin/dashboard',
             'accountant'  => '/accountant/dashboard',
             'business'    => '/dashboard',
+            'customer'    => '/client/dashboard',
         ];
 
         $redirectUrl = $redirects[$primaryRole] ?? '/dashboard';
@@ -141,7 +142,7 @@ class AuthController extends Controller {
 
         // Determine primary role for redirect (using hierarchy)
         $primaryRole = $this->auth->getPrimaryRole($roles);
-        
+
         // Define redirect URLs per role
         $redirects = [
             'super_admin' => '/admin/dashboard',

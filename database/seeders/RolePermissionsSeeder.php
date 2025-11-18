@@ -21,6 +21,7 @@ class RolePermissionsSeeder extends Seeder
             'business',
             'business_admin',
             'user',
+            'customer',
         ];
 
         foreach ($roles as $role) {
@@ -56,6 +57,9 @@ class RolePermissionsSeeder extends Seeder
 
         $businessAdmin = Role::where('name', 'business_admin')->first();
         $businessAdmin->givePermissionTo(['business_management', 'view_reports']);
+
+        $customer = Role::where('name', 'customer')->first();
+        $customer->givePermissionTo(['view_reports']);
 
         // --- Create default users (optional) ---
         $superAdminUser = User::firstOrCreate(

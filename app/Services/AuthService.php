@@ -81,6 +81,7 @@ class AuthService
             'accountant'  => '/accountant/dashboard',
             'business'    => '/dashboard',
             'customer'    => '/business',
+            'customer'    => '/client/dashboard',
         ];
 
         $redirectUrl = $redirects[$primaryRole] ?? '/dashboard';
