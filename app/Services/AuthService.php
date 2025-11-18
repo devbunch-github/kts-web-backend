@@ -20,7 +20,9 @@ class AuthService
         $hierarchy = [
             'super_admin',
             'accountant',
-            'business'
+            'business',
+            'business_admin',
+            'customer',
         ];
 
         foreach ($hierarchy as $role) {
@@ -39,8 +41,20 @@ class AuthService
             'email'=> $v['email'],
             'password' => bcrypt($v['password'] ?? Str::random(12)),
         ]);
+
+        $roleName = $v['type'] === 'business' ? 'business_admin' : 'customer';
+        $role = Role::firstOrCreate([
+            'name' => $roleName,
+            'guard_name' => 'web'
+        ]);
+
+        $user->assignRole($role);
         // attach business_name/phone to profile table if you have one
-        return response()->json(['ok'=>true,'user_id'=>$user->id]);
+        return response()->json([
+            'ok'      => true,
+            'user_id' => $user->id,
+            'role'    => $roleName,
+        ]);
     }
 
     public function login(string $email, string $password, bool $remember = false)
@@ -66,6 +80,7 @@ class AuthService
             'super_admin' => '/admin/dashboard',
             'accountant'  => '/accountant/dashboard',
             'business'    => '/dashboard',
+            'customer'    => '/business',
         ];
 
         $redirectUrl = $redirects[$primaryRole] ?? '/dashboard';

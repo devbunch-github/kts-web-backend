@@ -22,6 +22,7 @@ class AuthController extends Controller {
             'email'=>'required|email|unique:users,email',
             'phone'=>'nullable|string|max:30',
             'password'=>'nullable',
+            'type' => 'nullable|in:business,customer'
         ]);
         return $this->auth->register($v);
     }
