@@ -40,8 +40,35 @@ use App\Http\Controllers\Api\Business\BusinessToDoController;
 use App\Http\Controllers\Api\Business\NotificationController;
 use App\Http\Controllers\Api\Business\BusinessProfileController;
 use App\Http\Controllers\Api\Business\BusinessReportController;
+use App\Http\Controllers\Api\Public\AppointmentPaymentController;
 
 Route::get('/beauticians', [BeauticianController::class, 'index']);
+Route::middleware('optional.sanctum')->group(function () {
+    Route::get('/categories', [CategoryController::class, 'index']);
+    Route::get('/services', [ServiceController::class, 'index']);
+    Route::apiResource('employees', EmployeeController::class);
+
+    //business settings
+    Route::prefix('business/settings')
+        ->group(function () {
+            Route::get('{type}', [BusinessSettingController::class, 'show']);
+            Route::post('{type}', [BusinessSettingController::class, 'update']); // accepts multipart for 'site'
+        });
+
+    Route::get('/employees/{employee}/time-offs', [EmployeeController::class, 'timeOffs']);
+    Route::post('/employees/{employee}/time-offs', [EmployeeController::class, 'storeTimeOff']);
+    // Route::get('/employees/{employee}/schedule', [EmployeeController::class, 'schedule']);
+    Route::get('/employees/{employee}/calendar', [EmployeeController::class, 'calendar']);
+    Route::get('/employees/{id}/schedule', [EmployeeController::class, 'weekSchedule']);
+    Route::post('/employees/{id}/schedule', [EmployeeController::class, 'storeSchedule']);
+});
+
+Route::prefix('public/payment')->group(function () {
+    Route::post('/stripe', [AppointmentPaymentController::class, 'stripe']);
+    Route::post('/paypal', [AppointmentPaymentController::class, 'paypal']);
+});
+
+Route::post('/customers', [CustomerController::class, 'publicStore']);
 
 // Contact
 Route::post('/contact', [ContactController::class, 'store']);
@@ -150,18 +177,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/income/{id}', [IncomeController::class, 'update']);
     Route::delete('/income/{id}', [IncomeController::class, 'destroy']);
 
-    Route::get('/categories', [CategoryController::class, 'index']);
-    Route::get('/services', [ServiceController::class, 'index']);
-
     Route::get('/income/export/pdf', [IncomeController::class, 'exportPdf']);
-
-    Route::apiResource('employees', EmployeeController::class);
-    Route::get('/employees/{employee}/time-offs', [EmployeeController::class, 'timeOffs']);
-    Route::post('/employees/{employee}/time-offs', [EmployeeController::class, 'storeTimeOff']);
-    // Route::get('/employees/{employee}/schedule', [EmployeeController::class, 'schedule']);
-    Route::get('/employees/{employee}/calendar', [EmployeeController::class, 'calendar']);
-    Route::get('/employees/{id}/schedule', [EmployeeController::class, 'weekSchedule']);
-    Route::post('/employees/{id}/schedule', [EmployeeController::class, 'storeSchedule']);
 
     Route::apiResource('appointments', AppointmentController::class);
 
@@ -281,3 +297,39 @@ Route::delete('/admin/plans/{id}', [PlanController::class, 'destroy']);
 
 Route::get('/admin/subscriptions', [SubscriptionController::class, 'getSubscriptions']);
 Route::post('/admin/subscriptions/{id}/cancel', [SubscriptionController::class, 'cancel']);
+
+//business rota and time off
+Route::middleware(['auth:sanctum'])->prefix('business')->group(function () {
+    Route::get('/rota',[RotaController::class,'index']);
+    Route::post('/rota/store',[RotaController::class,'store']);
+    Route::delete('/rota',[RotaController::class,'destroy']);
+    Route::put('/rota/{id}', [RotaController::class, 'update']);
+
+    Route::get('/time-off', [TimeOffController::class, 'index']);
+    Route::post('/time-off/store', [TimeOffController::class, 'store']);
+    Route::put('/time-off/{id}', [TimeOffController::class, 'update']);
+    Route::delete('/time-off', [TimeOffController::class, 'destroy']);
+
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get   ('/forms',                 [BusinessFormController::class,'index']);
+    Route::get   ('/forms/{id}',            [BusinessFormController::class,'show']);
+    Route::post  ('/forms',                 [BusinessFormController::class,'store']);
+    Route::put   ('/forms/{id}',            [BusinessFormController::class,'update']);
+    Route::delete('/forms/{id}',            [BusinessFormController::class,'destroy']);
+    Route::patch ('/forms/{id}/toggle',     [BusinessFormController::class,'toggle']);
+});
+
+Route::middleware('auth:sanctum')->prefix('business/todo')->group(function () {
+    Route::get('/', [BusinessToDoController::class, 'index']);
+    Route::post('/', [BusinessToDoController::class, 'store']);
+    Route::put('{id}', [BusinessToDoController::class, 'update']);
+    Route::delete('{id}', [BusinessToDoController::class, 'destroy']);
+    Route::patch('{id}/toggle', [BusinessToDoController::class, 'toggle']);
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/business/profile', [BusinessProfileController::class, 'show']);
+    Route::post('/business/profile', [BusinessProfileController::class, 'update']);
+});

@@ -203,4 +203,37 @@ class CustomerController extends Controller
             return response()->json(['success' => false, 'message' => 'Failed to delete review.'], 500);
         }
     }
+
+    /**
+ * PUBLIC: Create customer from booking flow
+    */
+    public function publicStore(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'AccountId'    => 'required|integer',
+                'Name'         => 'required|string|max:255',
+                'MobileNumber' => 'nullable|string|max:20',
+                'Email'        => 'nullable|email|max:255',
+            ]);
+
+            $customer = $this->customers->createForAccount(
+                $validated['AccountId'],
+                $validated
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $customer
+            ], 201);
+
+        } catch (\Exception $e) {
+            \Log::error("publicStore: ".$e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create customer'
+            ], 500);
+        }
+    }
+
 }

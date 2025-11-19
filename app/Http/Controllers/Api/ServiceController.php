@@ -18,21 +18,27 @@ class ServiceController extends Controller
         protected CategoryRepository $categories
     ) {}
 
-    protected function currentAccountId(): ?int
+    protected function currentAccountId($request): ?int
     {
-        if (Auth::check()) return Auth::user()?->bkUser?->account?->Id;
+        if(!isset($request->account_id)){
+            if (Auth::check()) return Auth::user()?->bkUser?->account?->Id;
 
-        $userId = request()->header('X-User-Id') ?? request('user_id');
-        if ($userId) {
-        $user = User::find($userId);
-            return $user?->bkUser?->account?->Id;
+            $userId = request()->header('X-User-Id') ?? request('user_id');
+            if ($userId) {
+                $u = User::find($userId);
+                return $u?->bkUser?->account?->Id;
+            }
+            
+        } elseif(isset($request->account_id)) {
+            return $request->account_id;
         }
+
         return null;
     }
 
     public function index(Request $request)
     {
-        $accId = $this->currentAccountId();
+        $accId = $this->currentAccountId($request);
         if (!$accId) return response()->json(['message'=>'No account found'],404);
 
         return response()->json(['data'=>$this->services->listByAccount($accId)]);

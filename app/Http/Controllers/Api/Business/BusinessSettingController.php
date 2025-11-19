@@ -8,19 +8,24 @@ use App\Http\Resources\BusinessSettingResource;
 use App\Services\BusinessSettingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Exception;
 
 class BusinessSettingController extends Controller
 {
     public function __construct(protected BusinessSettingService $service) {}
 
-    protected function currentAccountId(): int
+    protected function currentAccountId( $accountId = null ): int
     {
-        return auth()->user()?->bkUser?->account->Id ?? throw new Exception('No account found');
+        if($accountId == null){
+            return auth()->user()?->bkUser?->account->Id ?? throw new Exception('No account found');
+        } else {
+            return (int) $accountId;
+        }
     }
 
     public function show(Request $request, string $type)
     {
-        $accountId = $this->currentAccountId();
+        $accountId = $this->currentAccountId($request->account_id);
         $setting = $this->service->get($accountId, $type);
 
         // Return empty shell if nothing saved yet
@@ -38,7 +43,7 @@ class BusinessSettingController extends Controller
 
     public function update(Request $request, string $type)
     {
-        $accountId = $this->currentAccountId();
+        $accountId = $this->currentAccountId($request->account_id);
 
         if ($type === 'site') {
             /** @var SiteSettingRequest $request */

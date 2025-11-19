@@ -57,7 +57,7 @@ class AppointmentRepository
     {
         try {
             $user = Auth::user();
-            $createdById = $user?->bkUser?->Id ?? null;
+            $createdById = $user?->bkUser?->Id ?? $user->id;
 
             $data['AccountId'] = $accountId;
             $data['CreatedById'] = $createdById;

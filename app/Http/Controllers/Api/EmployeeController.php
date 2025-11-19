@@ -23,10 +23,10 @@ class EmployeeController extends Controller
         $this->employees = $employees;
     }
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         try {
-            $accId = $this->currentAccountId();
+            $accId = $this->currentAccountId($request->account_id);
             if (!$accId) return response()->json(['message' => 'No account found'], 404);
 
             $data = $this->employees->listByAccount($accId);
@@ -127,16 +127,20 @@ class EmployeeController extends Controller
         return response()->json($data);
     }
 
-    protected function currentAccountId(): ?int
+    protected function currentAccountId($accountId = null): ?int
     {
         if (Auth::check()) {
             return Auth::user()?->bkUser?->account?->Id;
         }
 
-        $userId = request()->header('X-User-Id') ?? request('user_id');
-        if ($userId) {
-            $user = User::find($userId);
-            return $user?->bkUser?->account?->Id;
+        if($accountId == null) {
+            $userId = request()->header('X-User-Id') ?? request('user_id');
+            if ($userId) {
+                $user = User::find($userId);
+                return $user?->bkUser?->account?->Id;
+            }
+        } else {
+            return $accountId;
         }
 
         return null;

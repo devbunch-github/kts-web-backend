@@ -12,12 +12,18 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // API middleware group
+
+        // 🔹 Register Route Middleware Aliases (Laravel 11 way)
+        $middleware->alias([
+            'optional.sanctum' => \App\Http\Middleware\OptionalSanctum::class,
+        ]);
+
+        // 🔹 API middleware group
         $middleware->group('api', [
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ]);
 
-        // Web middleware group
+        // 🔹 Web middleware group
         $middleware->group('web', [
             \Illuminate\Cookie\Middleware\EncryptCookies::class,
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,

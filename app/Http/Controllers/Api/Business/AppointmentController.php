@@ -23,16 +23,21 @@ class AppointmentController extends Controller
     /**
      * Get current AccountId based on Auth user or provided header
      */
-    protected function currentAccountId(): ?int
+    protected function currentAccountId($accountId = null): ?int
     {
-        if (Auth::check()) {
-            return Auth::user()?->bkUser?->account?->Id;
-        }
+        if($accountId == null) {
 
-        $userId = request()->header('X-User-Id') ?? request('user_id');
-        if ($userId) {
-            $user = User::find($userId);
-            return $user?->bkUser?->account?->Id;
+            if (Auth::check()) {
+                return Auth::user()?->bkUser?->account?->Id;
+            }
+
+            $userId = request()->header('X-User-Id') ?? request('user_id');
+            if ($userId) {
+                $user = User::find($userId);
+                return $user?->bkUser?->account?->Id;
+            }
+        } else {
+            return $accountId;
         }
 
         return null;
@@ -57,10 +62,10 @@ class AppointmentController extends Controller
         }
     }
 
-    public function show($id)
+    public function show($id, Request $request)
     {
         try {
-            $accId = $this->currentAccountId();
+            $accId = $this->currentAccountId($request->account_id);
             if (!$accId) return response()->json(['message' => 'No account found'], 404);
 
             $appointment = $this->appointments->findByAccount($accId, (int)$id);
@@ -87,7 +92,7 @@ class AppointmentController extends Controller
                 'EmployeeId'    => 'nullable|integer|exists:Employees,Id',
             ]);
 
-            $accId = $this->currentAccountId();
+            $accId = $this->currentAccountId($request->account_id);
             if (!$accId) return response()->json(['message' => 'No account found'], 404);
 
             $appointment = $this->appointments->createForAccount($accId, $validated);
