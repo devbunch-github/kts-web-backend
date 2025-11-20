@@ -30,13 +30,18 @@ class AppointmentPaymentController extends Controller
     {
         $request->validate([
             'appointment_id' => 'required|exists:appointments,Id',
-            'account_id' => 'required',
-            'amount' => 'required|numeric|min:1',
+            'account_id'     => 'required',
+            'amount'         => 'required|numeric|min:1',
+            'subdomain'      => 'required|string'
         ]);
 
         $appointment = Appointment::find($request->appointment_id);
 
         Stripe::setApiKey(config('services.stripe.secret'));
+
+        $frontend   = config('app.frontend_url', env('FRONTEND_URL'));
+        $successUrl = "{$frontend}/{$request->subdomain}/payment/success/{$appointment->Id}";
+        $cancelUrl  = "{$frontend}/{$request->subdomain}/payment/cancel/{$appointment->Id}";
 
         $session = StripeSession::create([
             'mode' => 'payment',
@@ -55,8 +60,8 @@ class AppointmentPaymentController extends Controller
             'metadata' => [
                 'appointment_id' => $appointment->Id,
             ],
-            'success_url' => url("/public/payment/success/{$appointment->Id}"),
-            'cancel_url' => url("/public/payment/cancel/{$appointment->Id}"),
+            'success_url' => $successUrl,
+            'cancel_url'  => $cancelUrl,
         ]);
 
         return response()->json(['url' => $session->url]);
@@ -69,11 +74,17 @@ class AppointmentPaymentController extends Controller
     {
         $request->validate([
             'appointment_id' => 'required|exists:appointments,Id',
-            'account_id' => 'required',
-            'amount' => 'required|numeric|min:1',
+            'account_id'     => 'required',
+            'amount'         => 'required|numeric|min:1',
+            'subdomain'      => 'required|string'
         ]);
 
         $amount = number_format($request->amount, 2, '.', '');
+
+        // React routes (NO /public/)
+        $frontend   = config('app.frontend_url', env('FRONTEND_URL'));
+        $successUrl = "{$frontend}/{$request->subdomain}/payment/paypal/success/{$request->appointment_id}";
+        $cancelUrl  = "{$frontend}/{$request->subdomain}/payment/paypal/cancel/{$request->appointment_id}";
 
         $order = new OrdersCreateRequest();
         $order->prefer('return=representation');
@@ -86,8 +97,8 @@ class AppointmentPaymentController extends Controller
                 ]
             ]],
             'application_context' => [
-                'return_url' => url("/public/payment/paypal/success/{$request->appointment_id}"),
-                'cancel_url' => url("/public/payment/paypal/cancel/{$request->appointment_id}"),
+                'return_url' => $successUrl,
+                'cancel_url' => $cancelUrl,
             ]
         ];
 
@@ -98,4 +109,19 @@ class AppointmentPaymentController extends Controller
             'approval_url' => $response->result->links[1]->href,
         ]);
     }
+
+    public function markAsPaid(Request $request, $appointmentId)
+    {
+        $appointment = Appointment::find($appointmentId);
+
+        if (!$appointment) {
+            return response()->json(['success' => false, 'message' => 'Appointment not found'], 404);
+        }
+
+        $appointment->Status = 1;
+        $appointment->save();
+
+        return response()->json(['success' => true]);
+    }
+
 }

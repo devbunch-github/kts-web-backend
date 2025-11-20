@@ -67,6 +67,9 @@ Route::prefix('public/payment')->group(function () {
     Route::post('/stripe', [AppointmentPaymentController::class, 'stripe']);
     Route::post('/paypal', [AppointmentPaymentController::class, 'paypal']);
 });
+Route::post('/public/payment/mark-paid/{appointmentId}', 
+    [AppointmentPaymentController::class, 'markAsPaid']
+);
 
 Route::post('/customers', [CustomerController::class, 'publicStore']);
 
