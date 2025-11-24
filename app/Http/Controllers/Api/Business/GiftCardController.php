@@ -15,10 +15,15 @@ class GiftCardController extends Controller
 {
     public function __construct(private GiftCardService $service) {}
 
-    protected function currentAccountId(): int
+    protected function currentAccountId($accountId = null): int
     {
-        // mirror your PromoCode pattern exactly
-        return auth()->user()?->bkUser?->account->Id ?? throw new Exception('No account found');
+        if($accountId == null) {
+            // mirror your PromoCode pattern exactly
+            return auth()->user()?->bkUser?->account->Id ?? throw new Exception('No account found');
+        } else {
+            return $accountId;
+        }
+        
     }
 
     public function index(Request $request)
@@ -35,9 +40,9 @@ class GiftCardController extends Controller
         return new GiftCardResource($gift);
     }
 
-    public function show(int $id)
+    public function show(int $id, Request $request)
     {
-        $accountId = $this->currentAccountId();
+        $accountId = $this->currentAccountId($request->account_id);
         $gift = app(GiftCardRepositoryInterface::class)
             ->findByAccount($accountId, $id);
         return new GiftCardResource($gift);

@@ -41,6 +41,7 @@ use App\Http\Controllers\Api\Business\NotificationController;
 use App\Http\Controllers\Api\Business\BusinessProfileController;
 use App\Http\Controllers\Api\Business\BusinessReportController;
 use App\Http\Controllers\Api\Public\AppointmentPaymentController;
+use App\Http\Controllers\Api\Public\GiftCardPaymentController;
 
 Route::get('/beauticians', [BeauticianController::class, 'index']);
 Route::middleware('optional.sanctum')->group(function () {
@@ -62,6 +63,19 @@ Route::middleware('optional.sanctum')->group(function () {
     Route::get('/employees/{id}/schedule', [EmployeeController::class, 'weekSchedule']);
     Route::post('/employees/{id}/schedule', [EmployeeController::class, 'storeSchedule']);
 });
+
+Route::prefix('public')->group(function () {
+    // GIFT CARD payments
+    Route::post('gift-cards/stripe', [GiftCardPaymentController::class, 'stripe']);
+    Route::post('gift-cards/paypal', [GiftCardPaymentController::class, 'paypal']);
+    Route::post(
+        'gift-cards/purchase/{purchase}/mark-paid',
+        [GiftCardPaymentController::class, 'markAsPaid']
+    );
+});
+
+Route::get('public/promo/validate', [PromoCodeController::class, 'validateCode']);
+Route::get('public/gift-card/{id}', [GiftCardController::class, 'show']);
 
 Route::prefix('public/payment')->group(function () {
     Route::post('/stripe', [AppointmentPaymentController::class, 'stripe']);

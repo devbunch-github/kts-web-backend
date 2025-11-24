@@ -62,6 +62,9 @@ class AppointmentRepository
             $data['AccountId'] = $accountId;
             $data['CreatedById'] = $createdById;
             $data['DateCreated'] = now();
+            $data['FinalAmount'] = $data['FinalAmount'] ?? $data['Cost'];
+            $data['Discount']    = $data['Discount'] ?? 0;
+            $data['PromoCode']   = $data['PromoCode'] ?? null;
 
             // 🔹 Map Status
             $statusMap = [
@@ -118,7 +121,7 @@ class AppointmentRepository
                     'AccountId'           => $account->Id,
                     'AccountingPeriodId'  => $accountPeriod?->Id,
                     'AppointmentId'       => $appointment->Id,
-                    'Amount'              => $data['Cost'],
+                    'Amount' => $data['FinalAmount'] ?? $data['Cost'],
                     'PaymentMethod'       => isset($data['PaymentMethod'])
                                                 ? ($data['PaymentMethod'] == 'Cash' ? 0 : 1)
                                                 : 0,

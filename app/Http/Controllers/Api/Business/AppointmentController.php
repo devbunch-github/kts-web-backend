@@ -90,7 +90,13 @@ class AppointmentController extends Controller
                 'RefundAmount'  => 'nullable|numeric|min:0',
                 'Status'        => 'required',
                 'EmployeeId'    => 'nullable|integer|exists:Employees,Id',
+
+                // ⭐ ADD THESE THREE:
+                'FinalAmount'   => 'nullable|numeric|min:0',
+                'Discount'      => 'nullable|numeric|min:0',
+                'PromoCode'     => 'nullable|string|max:50',
             ]);
+
 
             $accId = $this->currentAccountId($request->account_id);
             if (!$accId) return response()->json(['message' => 'No account found'], 404);
