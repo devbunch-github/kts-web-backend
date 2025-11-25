@@ -46,7 +46,7 @@ class AppointmentController extends Controller
     public function index(Request $request)
     {
         try {
-            $accId = $this->currentAccountId();
+            $accId = $this->currentAccountId($request->account_id);
             if (!$accId) return response()->json(['message' => 'No account found'], 404);
 
             $filters = [
@@ -90,8 +90,6 @@ class AppointmentController extends Controller
                 'RefundAmount'  => 'nullable|numeric|min:0',
                 'Status'        => 'required',
                 'EmployeeId'    => 'nullable|integer|exists:Employees,Id',
-
-                // ⭐ ADD THESE THREE:
                 'FinalAmount'   => 'nullable|numeric|min:0',
                 'Discount'      => 'nullable|numeric|min:0',
                 'PromoCode'     => 'nullable|string|max:50',
@@ -127,7 +125,7 @@ class AppointmentController extends Controller
                 'EmployeeId'    => 'nullable|integer|exists:Employees,Id',
             ]);
 
-            $accId = $this->currentAccountId();
+            $accId = $this->currentAccountId($request->account_id);
             if (!$accId) return response()->json(['message' => 'No account found'], 404);
 
             $appointment = $this->appointments->updateForAccount($accId, (int)$id, $validated);
@@ -140,10 +138,10 @@ class AppointmentController extends Controller
         }
     }
 
-    public function destroy($id)
+    public function destroy($id, Request $request)
     {
         try {
-            $accId = $this->currentAccountId();
+            $accId = $this->currentAccountId($request->account_id);
             if (!$accId) return response()->json(['message' => 'No account found'], 404);
 
             $this->appointments->softDeleteByAccount($accId, (int)$id);

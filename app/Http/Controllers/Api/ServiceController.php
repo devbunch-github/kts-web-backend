@@ -44,9 +44,9 @@ class ServiceController extends Controller
         return response()->json(['data'=>$this->services->listByAccount($accId)]);
     }
 
-    public function show($id)
+    public function show($id, Request $request)
     {
-        $accId = $this->currentAccountId();
+        $accId = $this->currentAccountId( $request );
         if (!$accId) return response()->json(['message'=>'No account found'],404);
 
         return response()->json(['data'=>$this->services->findByAccount($accId,(int)$id)]);
@@ -54,7 +54,7 @@ class ServiceController extends Controller
 
     public function store(ServiceStoreRequest $request)
     {
-        $accId = $this->currentAccountId();
+        $accId = $this->currentAccountId($request);
         if (!$accId) return response()->json(['message'=>'No account found'],404);
 
         if ($request->filled('CategoryId')) {
@@ -68,7 +68,7 @@ class ServiceController extends Controller
 
     public function update(ServiceUpdateRequest $request,$id)
     {
-        $accId = $this->currentAccountId();
+        $accId = $this->currentAccountId($request);
         if (!$accId) return response()->json(['message'=>'No account found'],404);
 
         if ($request->filled('CategoryId')) {
@@ -80,9 +80,9 @@ class ServiceController extends Controller
         return response()->json(['data'=>$row]);
     }
 
-    public function destroy($id)
+    public function destroy($id, Request $request)
     {
-        $accId = $this->currentAccountId();
+        $accId = $this->currentAccountId($request);
         if (!$accId) return response()->json(['message'=>'No account found'],404);
 
         $this->services->softDelete($accId,(int)$id);
