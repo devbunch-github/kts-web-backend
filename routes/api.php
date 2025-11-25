@@ -75,7 +75,10 @@ Route::prefix('public')->group(function () {
 });
 
 Route::get('public/promo/validate', [PromoCodeController::class, 'validateCode']);
-Route::get('public/gift-card/{id}', [GiftCardController::class, 'show']);
+Route::get('public/gift-card/validate', [GiftCardController::class, 'validateCode']);
+
+Route::get('public/gift-card/{id}', [GiftCardController::class, 'show'])
+    ->where('id', '[0-9]+');
 
 Route::prefix('public/payment')->group(function () {
     Route::post('/stripe', [AppointmentPaymentController::class, 'stripe']);
