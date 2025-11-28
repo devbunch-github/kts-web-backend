@@ -5,7 +5,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Schema;
 
 class GiftCardPurchase extends Model
 {
@@ -24,12 +23,14 @@ class GiftCardPurchase extends Model
         'PayPalOrderId',
         'ExpiresAt',
         'PaidAt',
+        'UsedAmount', // ⬅ add
     ];
 
     protected $casts = [
         'Amount'    => 'decimal:2',
         'ExpiresAt' => 'datetime',
         'PaidAt'    => 'datetime',
+        'UsedAmount'=> 'decimal:2',
     ];
 
     public function giftCard()
@@ -45,5 +46,15 @@ class GiftCardPurchase extends Model
     public function account()
     {
         return $this->belongsTo(Account::class, 'AccountId', 'Id');
+    }
+
+    public function usages()
+    {
+        return $this->hasMany(GiftCardUsage::class, 'gift_card_purchase_id');
+    }
+
+    public function getRemainingAttribute()
+    {
+        return max(0, $this->Amount - $this->UsedAmount);
     }
 }

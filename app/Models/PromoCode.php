@@ -9,18 +9,19 @@ class PromoCode extends Model
 {
     use SoftDeletes;
 
-    public $timestamps = false; // we maintain date_created/date_modified
+    public $timestamps = false;
 
     protected $fillable = [
         'account_id','created_by_id','modified_by_id',
         'title','code','service_id','discount_type','discount_value',
-        'start_date','end_date','status','notes','date_created','date_modified'
+        'start_date','end_date','status','notes','date_created','date_modified',
+        'usage_limit_per_customer','usage_limit_global', // ⬅ NEW
     ];
 
     protected $casts = [
-        'start_date'   => 'date',
-        'end_date'     => 'date',
-        'status'       => 'integer',
+        'start_date'    => 'date',
+        'end_date'      => 'date',
+        'status'        => 'integer',
         'discount_value'=> 'decimal:2',
     ];
 
@@ -41,5 +42,10 @@ class PromoCode extends Model
             && (is_null($this->end_date) || $this->end_date->endOfDay() >= $today);
 
         return $this->status === 1 && $withinDates;
+    }
+
+    public function usages()
+    {
+        return $this->hasMany(PromoCodeUsage::class, 'promo_code_id');
     }
 }

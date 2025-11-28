@@ -75,20 +75,23 @@ class GiftCardController extends Controller
     public function validateCode(Request $request)
     {
         $data = $request->validate([
-            'account_id' => 'required|integer',
-            'code'       => 'required|string|max:50',
+            'account_id'  => 'required|integer',
+            'code'        => 'required|string|max:50',
+            'customer_id' => 'required|integer',
+        ], [
+            'customer_id.required' => 'Please login/signup to use gift cards.',
         ]);
 
-        $accountId = (int) $data['account_id'];
-        $code = trim($data['code']);
-        $today = now();
+        $accountId  = (int) $data['account_id'];
+        $code       = trim($data['code']);
+        $today      = now();
 
         $giftCard = GiftCard::where('account_id', $accountId)
             ->where('code', $code)
             ->where('is_active', true)
             ->first();
 
-        if(!$giftCard) {
+        if (!$giftCard) {
             return response()->json([
                 'valid'   => false,
                 'message' => 'Invalid or inactive gift card.',
@@ -96,7 +99,7 @@ class GiftCardController extends Controller
         }
 
         $purchase = GiftCardPurchase::where('AccountId', $accountId)
-            ->where('GiftCardId', $giftCard->id)
+            ->where('GiftCardId', $giftCard->Id ?? $giftCard->id)
             ->where('PaymentStatus', 'paid')
             ->where(function ($q) use ($today) {
                 $q->whereNull('ExpiresAt')
@@ -111,17 +114,67 @@ class GiftCardController extends Controller
             ], 404);
         }
 
+        if ((float) $purchase->Amount - (float) $purchase->UsedAmount <= 0) {
+            return response()->json([
+                'valid'   => false,
+                'message' => 'This gift card has no remaining balance.',
+            ], 422);
+        }
+
         return response()->json([
             'valid' => true,
             'data'  => [
-                'id'        => $purchase->Id,
-                'code'      => $giftCard->code,
-                'amount'    => (float) $purchase->Amount, // original amount
-                'remaining' => (float) $purchase->Amount, // you must later track used amount
-                'expires_at'=> $purchase->ExpiresAt,
+                'id'         => $purchase->Id,
+                'code'       => $purchase->Code,
+                'amount'     => (float) $purchase->Amount,     // original
+                'used'       => (float) $purchase->UsedAmount, // used total
+                'remaining'  => $purchase->remaining,
+                'remaining_amount'  => (float) $purchase->Amount - (float) $purchase->UsedAmount,
+                'expires_at' => $purchase->ExpiresAt,
             ],
         ]);
     }
 
+    /**
+     * Admin: usage history for gift card definition (GiftCard)
+     * Route: GET /api/gift-cards/{id}/usages
+     */
+    public function usages(Request $request, $id)
+    {
+        $accountId = $this->currentAccountId();
+
+        $giftCard = GiftCard::where('account_id', $accountId)->findOrFail($id);
+
+        // Pagination parameters
+        $perPage = $request->get('per_page', 10);
+        $page = $request->get('page', 1);
+
+        // Paginated purchases
+        $purchases = GiftCardPurchase::with(['customer'])
+            ->where('AccountId', $accountId)
+            ->where('GiftCardId', $giftCard->Id ?? $giftCard->id)
+            ->orderBy('Id', 'DESC')
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        // Format purchases with usage rows
+        $purchases->getCollection()->transform(function ($purchase) {
+            $purchase->usage_rows = $purchase->usages()
+                ->with('appointment')
+                ->orderByDesc('created_at')
+                ->get();
+            return $purchase;
+        });
+
+        return response()->json([
+            'gift_card' => $giftCard,
+            'purchases' => $purchases->items(),
+            'meta'      => [
+                'current_page' => $purchases->currentPage(),
+                'last_page'    => $purchases->lastPage(),
+                'per_page'     => $purchases->perPage(),
+                'total'        => $purchases->total(),
+            ]
+        ]);
+    }
 
 }

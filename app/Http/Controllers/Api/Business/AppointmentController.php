@@ -93,6 +93,8 @@ class AppointmentController extends Controller
                 'FinalAmount'   => 'nullable|numeric|min:0',
                 'Discount'      => 'nullable|numeric|min:0',
                 'PromoCode'     => 'nullable|string|max:50',
+                'GiftCardCode'  => 'nullable|string|max:50',      // ⬅ NEW
+                'GiftCardAmount'=> 'nullable|numeric|min:0',      // ⬅ NEW
             ]);
 
 

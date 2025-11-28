@@ -202,11 +202,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('appointments', AppointmentController::class);
 
     Route::apiResource('promo-codes', PromoCodeController::class);
+    Route::get('promo-codes/{id}/usages', [PromoCodeController::class, 'usages']);
+
     Route::get('gift-cards', [GiftCardController::class, 'index']);
     Route::post('gift-cards', [GiftCardController::class, 'store']);
     Route::get('gift-cards/{id}', [GiftCardController::class, 'show']);
     Route::put('gift-cards/{id}', [GiftCardController::class, 'update']);
     Route::delete('gift-cards/{id}', [GiftCardController::class, 'destroy']);
+    Route::get('gift-cards/{id}/usages', [GiftCardController::class, 'usages']);
 
     Route::get('email-messages', [EmailMessageController::class, 'index']);
     Route::get('email-messages/{id}', [EmailMessageController::class, 'show']);
@@ -352,4 +355,8 @@ Route::middleware('auth:sanctum')->prefix('business/todo')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/business/profile', [BusinessProfileController::class, 'show']);
     Route::post('/business/profile', [BusinessProfileController::class, 'update']);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('client')->group(function () {
+    Route::get('/appointments', [ClientController::class, 'appointments']);
 });

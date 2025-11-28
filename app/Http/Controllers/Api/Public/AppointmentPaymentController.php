@@ -5,6 +5,10 @@ namespace App\Http\Controllers\Api\Public;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Appointment;
+use App\Models\PromoCode;
+use App\Models\PromoCodeUsage;
+use App\Models\GiftCardPurchase;
+use App\Models\GiftCardUsage;
 use Stripe\Stripe;
 use Stripe\Checkout\Session as StripeSession;
 use PayPalCheckoutSdk\Orders\OrdersCreateRequest;
@@ -23,9 +27,6 @@ class AppointmentPaymentController extends Controller
         );
     }
 
-    // ---------------------------
-    // STRIPE CHECKOUT
-    // ---------------------------
     public function stripe(Request $request)
     {
         $request->validate([
@@ -67,9 +68,6 @@ class AppointmentPaymentController extends Controller
         return response()->json(['url' => $session->url]);
     }
 
-    // ---------------------------
-    // PAYPAL CHECKOUT
-    // ---------------------------
     public function paypal(Request $request)
     {
         $request->validate([
@@ -81,7 +79,6 @@ class AppointmentPaymentController extends Controller
 
         $amount = number_format($request->amount, 2, '.', '');
 
-        // React routes (NO /public/)
         $frontend   = config('app.frontend_url', env('FRONTEND_URL'));
         $successUrl = "{$frontend}/{$request->subdomain}/payment/paypal/success/{$request->appointment_id}";
         $cancelUrl  = "{$frontend}/{$request->subdomain}/payment/paypal/cancel/{$request->appointment_id}";
@@ -110,18 +107,58 @@ class AppointmentPaymentController extends Controller
         ]);
     }
 
+    /**
+     * Called from PaymentSuccessPage after Stripe/PayPal redirect
+     * Route: POST /api/public/payment/mark-paid/{appointmentId}
+     */
     public function markAsPaid(Request $request, $appointmentId)
     {
         $appointment = Appointment::find($appointmentId);
-
         if (!$appointment) {
             return response()->json(['success' => false, 'message' => 'Appointment not found'], 404);
         }
 
+        // 1) Mark as paid
         $appointment->Status = 1;
         $appointment->save();
 
+        // 2) Track PROMO usage (if any)
+        if (!empty($appointment->PromoCode) && $appointment->Discount > 0) {
+            $promo = PromoCode::where('code', $appointment->PromoCode)
+                ->where('account_id', $appointment->AccountId)
+                ->first();
+
+            if ($promo) {
+                PromoCodeUsage::create([
+                    'promo_code_id'  => $promo->id,
+                    'customer_id'    => $appointment->CustomerId,
+                    'appointment_id' => $appointment->Id,
+                    'account_id'     => $appointment->AccountId,
+                    'used_amount'    => $appointment->Discount,
+                ]);
+            }
+        }
+
+        // 3) Track GIFT CARD usage (if any)
+        if (!empty($appointment->GiftCardCode) && $appointment->GiftCardAmount > 0) {
+            $purchase = GiftCardPurchase::where('Code', $appointment->GiftCardCode)
+                ->where('AccountId', $appointment->AccountId)
+                ->first();
+
+            if ($purchase) {
+                GiftCardUsage::create([
+                    'gift_card_purchase_id' => $purchase->Id,
+                    'customer_id'           => $appointment->CustomerId,
+                    'appointment_id'        => $appointment->Id,
+                    'account_id'            => $appointment->AccountId,
+                    'used_amount'           => $appointment->GiftCardAmount,
+                ]);
+
+                $purchase->UsedAmount = $purchase->UsedAmount + $appointment->GiftCardAmount;
+                $purchase->save();
+            }
+        }
+
         return response()->json(['success' => true]);
     }
-
 }

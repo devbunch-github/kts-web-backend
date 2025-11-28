@@ -129,11 +129,12 @@ class EmployeeController extends Controller
 
     protected function currentAccountId($accountId = null): ?int
     {
-        if (Auth::check()) {
-            return Auth::user()?->bkUser?->account?->Id;
-        }
-
         if($accountId == null) {
+
+            if (Auth::check()) {
+                return Auth::user()?->bkUser?->account?->Id;
+            }
+
             $userId = request()->header('X-User-Id') ?? request('user_id');
             if ($userId) {
                 $user = User::find($userId);

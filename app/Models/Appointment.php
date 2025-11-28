@@ -28,19 +28,20 @@ class Appointment extends Model
         'EmployeeId',
         'DateModified',
         'CreatedById',
-        'ModifiedById'
+        'ModifiedById',
+        'PromoCode',       // ⬅ add
+        'GiftCardCode',    // ⬅ add
+        'GiftCardAmount',  // ⬅ add
     ];
 
     protected $casts = [
-        'StartDateTime' => 'datetime',
-        'EndDateTime' => 'datetime',
+        'StartDateTime'    => 'datetime',
+        'EndDateTime'      => 'datetime',
         'CancellationDate' => 'datetime',
     ];
 
     public $timestamps = false;
 
-
-    // RELATIONS
     public function customer() {
         return $this->belongsTo(Customer::class, 'CustomerId');
     }
@@ -57,5 +58,4 @@ class Appointment extends Model
     {
         return $this->belongsTo(Employee::class, 'EmployeeId');
     }
-
 }

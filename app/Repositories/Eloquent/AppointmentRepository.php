@@ -65,6 +65,8 @@ class AppointmentRepository
             $data['FinalAmount'] = $data['FinalAmount'] ?? $data['Cost'];
             $data['Discount']    = $data['Discount'] ?? 0;
             $data['PromoCode']   = $data['PromoCode'] ?? null;
+            $data['GiftCardCode']   = $data['GiftCardCode']   ?? null;
+            $data['GiftCardAmount'] = $data['GiftCardAmount'] ?? 0;
 
             // 🔹 Map Status
             $statusMap = [

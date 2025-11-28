@@ -23,8 +23,8 @@ class ClientController extends Controller
     {
         $clientId = $request->user()->id;
 
-        // $appointments = $this->clientService->fetchAppointments($clientId);
-        $appointments = $this->clientService->fetchAppointments(1);
+        $appointments = $this->clientService->fetchAppointments(auth()->id());
+        // $appointments = $this->clientService->fetchAppointments(1);
 
         return response()->json([
             'success' => true,
