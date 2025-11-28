@@ -359,4 +359,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::middleware(['auth:sanctum'])->prefix('client')->group(function () {
     Route::get('/appointments', [ClientController::class, 'appointments']);
+    Route::post('/appointments/{id}/cancel', [ClientController::class, 'cancelAppointment']);
+    Route::post('/appointments/{id}/reschedule', [ClientController::class, 'rescheduleAppointment']);
+    Route::post('/appointments/{id}/review', [ClientController::class, 'leaveReview']);
+
+    Route::get('/gift-cards', [ClientController::class, 'purchasedGiftCards']);
+    Route::get('/profile', [ClientController::class, 'profile']);
+    Route::put('/profile/update', [ClientController::class, 'updateProfile']);
+
 });
